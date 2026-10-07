@@ -239,6 +239,7 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
       <div class="section-label">Today's practice</div>
       <div class="status"><span class="dot" id="dot"></span><span id="status"></span></div>
       <div class="detail" id="detail"></div>
+      <input class="input" id="tryoutName" maxlength="80" placeholder="Your first and last name" aria-label="Your name" autocomplete="name" style="display:none;width:100%;margin-top:14px;font-size:15px;padding:12px">
       <button class="btn" id="btn" disabled>Check In</button>
       <div id="msg"></div>
       <div class="loc-help" id="locHelp" style="display:none">
@@ -360,6 +361,7 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
     <div class="admin-card">
       <h3>Admin — roster</h3>
       <div class="sub">Only people on the roster can check in. Add by uniqname or umich.edu email, or paste several separated by commas. Names are pulled from the UMich directory.</div>
+      <label class="toggle-row"><input type="checkbox" id="openCheckin"> Open check-in for tryouts: anyone with a umich.edu account can check in (they type their name)</label>
       <details class="drop" id="rosterBox">
         <summary id="rosterLabel">Roster</summary>
         <div class="drop-body" id="rosterRows"></div>
@@ -527,16 +529,18 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
   }
   function render(s){
     $('dateLine').textContent = longDate(s);
-    if (!s.onRoster && !s.isAdmin){ showAccessBlocked(s); return; }
+    const guest = !s.onRoster && !!s.openCheckin;   // tryouts: not on the roster but open check-in is on
+    if (!s.onRoster && !s.isAdmin && !guest){ showAccessBlocked(s); return; }
+    $('tryoutName').style.display = guest && !s.checkedInAt ? 'block' : 'none';
     lastStatus = s;
-    $('myAtt').style.display = 'block'; $('excBox').style.display = 'block';
+    $('myAtt').style.display = 'block'; $('excBox').style.display = s.onRoster || s.isAdmin ? 'block' : 'none';
     $('loading').style.display = 'none'; $('body').style.display = 'block';
     $('dateLine').textContent = longDate(s);
     if (s.email){ $('acct').style.display = 'flex'; $('email').textContent = s.email; }
     $('acctBadge').style.display = s.isAdmin ? 'inline-block' : 'none';
     if (s.isAdmin && !adminLoaded){ adminLoaded = true; $('adminPanel').style.display = 'block'; $('adminDivider').style.display = 'flex';
       loadAdmin(); }
-    if (!s.onRoster){
+    if (!s.onRoster && !guest){
       setState('', "You're Not on the Roster",
         s.email ? 'Ask an officer to add ' + s.email + ', then reload this page.' : 'Open this link while signed in to your @umich.edu Google account.', false);
     } else if (s.checkedInAt){
@@ -727,7 +731,15 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
   }
 
   // Roster
+  $('openCheckin').onchange = () => {
+    const box = $('openCheckin'), on = box.checked;
+    if (!confirm(on ? 'Open check-in to anyone with a umich.edu account (tryouts)?' : 'Go back to roster-only check-in?')){ box.checked = !on; return; }
+    box.disabled = true;
+    serverRun().withSuccessHandler(d => { box.disabled = false; renderAdmin(d); showIn('rosterMsg', 'ok', on ? 'Anyone with a umich.edu account can check in now. Turn this off after tryouts.' : 'Back to roster-only check-in.', 'Saved'); })
+      .withFailureHandler(e => { box.disabled = false; box.checked = !on; showIn('rosterMsg', 'bad', errText(e), 'Error'); }).setOpenCheckin(on);
+  };
   function renderRoster(d){
+    $('openCheckin').checked = !!d.openCheckin;
     const n = d.roster.length;
     $('rosterLabel').textContent = n + (n === 1 ? ' person' : ' people') + ' on the roster';
     const box = $('rosterRows'); box.innerHTML = '';
@@ -815,6 +827,8 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
 
   $('btn').onclick = async () => {
     const btn = $('btn');
+    const tryName = $('tryoutName').style.display === 'block' ? $('tryoutName').value.trim() : '';
+    if ($('tryoutName').style.display === 'block' && !tryName){ show('bad', 'Enter your first and last name first.'); $('tryoutName').focus(); return; }
     setBusy(btn, true, 'Getting Your Location'); show('', '');
     let pos;
     try { pos = await bestPosition(10000, 25); }
@@ -827,7 +841,7 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
         load();
       })
       .withFailureHandler(e => { show('bad', errText(e)); setBusy(btn, false, 'Check In'); })
-      .checkIn(c.latitude, c.longitude, c.accuracy);
+      .checkIn(c.latitude, c.longitude, c.accuracy, tryName);
   };
 
   // Location help: iPhone + Android steps; the viewer's own phone is opened and labelled.
