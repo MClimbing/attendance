@@ -360,8 +360,9 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
 
     <div class="admin-card">
       <h3>Admin — roster</h3>
-      <div class="sub">Only people on the roster can check in. Add by uniqname or umich.edu email, or paste several separated by commas. Names are pulled from the UMich directory.</div>
-      <label class="toggle-row"><input type="checkbox" id="openCheckin"> Open check-in for tryouts: anyone with a umich.edu account can check in (they type their name)</label>
+      <div class="sub" id="openStatus">🔒 Roster only — only people on the roster below can check in.</div>
+      <div class="row" style="margin:4px 0 14px"><button class="btn small secondary" id="openCheckinBtn" type="button">Open check-in for tryouts</button></div>
+      <div class="card-note" style="margin:0 0 8px">People on the roster (add by uniqname or umich.edu email, or paste several separated by commas; names come from the UMich directory):</div>
       <details class="drop" id="rosterBox">
         <summary id="rosterLabel">Roster</summary>
         <div class="drop-body" id="rosterRows"></div>
@@ -731,15 +732,20 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
   }
 
   // Roster
-  $('openCheckin').onchange = () => {
-    const box = $('openCheckin'), on = box.checked;
-    if (!confirm(on ? 'Open check-in to anyone with a umich.edu account (tryouts)?' : 'Go back to roster-only check-in?')){ box.checked = !on; return; }
-    box.disabled = true;
-    serverRun().withSuccessHandler(d => { box.disabled = false; renderAdmin(d); showIn('rosterMsg', 'ok', on ? 'Anyone with a umich.edu account can check in now. Turn this off after tryouts.' : 'Back to roster-only check-in.', 'Saved'); })
-      .withFailureHandler(e => { box.disabled = false; box.checked = !on; showIn('rosterMsg', 'bad', errText(e), 'Error'); }).setOpenCheckin(on);
+  let openOn = false;
+  $('openCheckinBtn').onclick = () => {
+    const btn = $('openCheckinBtn'), on = !openOn, label = btn.textContent;
+    if (!confirm(on ? 'Open check-in to anyone with a umich.edu account (tryouts)?' : 'Go back to roster-only check-in?')) return;
+    setBusy(btn, true);
+    serverRun().withSuccessHandler(d => { setBusy(btn, false, label); renderAdmin(d); showIn('rosterMsg', 'ok', on ? 'Anyone with a umich.edu account can check in now. Turn this off after tryouts.' : 'Back to roster-only check-in.', 'Saved'); })
+      .withFailureHandler(e => { setBusy(btn, false, label); showIn('rosterMsg', 'bad', errText(e), 'Error'); }).setOpenCheckin(on);
   };
   function renderRoster(d){
-    $('openCheckin').checked = !!d.openCheckin;
+    openOn = !!d.openCheckin;
+    $('openStatus').textContent = openOn
+      ? '🔓 Open for tryouts — anyone with a umich.edu account can check in (they type their name). Turn this off once tryouts are over.'
+      : '🔒 Roster only — only people on the roster below can check in. Open it up during tryouts so anyone with a umich.edu account can check in.';
+    $('openCheckinBtn').textContent = openOn ? 'Turn off open check-in' : 'Open check-in for tryouts';
     const n = d.roster.length;
     $('rosterLabel').textContent = n + (n === 1 ? ' person' : ' people') + ' on the roster';
     const box = $('rosterRows'); box.innerHTML = '';
