@@ -114,6 +114,11 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
 .exc-card .sub{color:var(--text-dim);font-size:12px;margin-bottom:12px;}
 .exc-card textarea.input{width:100%;min-height:72px;resize:vertical;font-family:'Inter',sans-serif;line-height:1.4;}
 .exc-card input[type=date].input{width:100%;display:block;}
+/* iOS: native date boxes center their text and ignore width unless reset */
+input[type=date].input{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;box-sizing:border-box;text-align:left;min-height:38px;}
+input[type=date].input::-webkit-date-and-time-value{text-align:left;}
+/* iPhone zooms in on any box with text under 16px; keep phones at 16px so the page stays put */
+@media (max-width:700px){ .input, select.input, textarea.input{font-size:16px;} .row > .input.grow{min-width:100%;} }
 .exc-card input[type=date].input::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.8;}
 .exc-card .row + .row, .exc-card textarea{margin-top:8px;}
 .exc-item{padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;}
