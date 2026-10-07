@@ -1,0 +1,1092 @@
+<!doctype html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Michigan Climbing Attendance</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#041c35;
+  --surface:#0a2c4d;
+  --surface-2:#123a61;
+  --line:#1f4a75;
+  --text:#f4f7fb;
+  --text-dim:#9fb4cc;
+  --blue:#6fa8dc;
+  --maize:#ffcb05;
+  --maize-dim:#ffcb0533;
+  --green:#4caf7d;
+  --amber:#f2b94d;
+  --red:#ff6b6b;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+.app{max-width:760px;margin:0 auto;padding:20px 16px 60px;}
+
+header{display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:18px;}
+.header-logo{width:64px;height:64px;flex-shrink:0;object-fit:contain;}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;color:var(--maize);text-transform:uppercase;margin-bottom:6px;}
+h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
+.date-line{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--text-dim);}
+
+.account-bar{display:flex;align-items:center;justify-content:flex-start;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:13px;}
+.account-bar .who{display:flex;align-items:center;gap:8px;min-width:0;}
+.account-bar #email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.account-bar .signout{margin-left:auto;flex-shrink:0;}
+.signin{text-align:center;padding:44px 20px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);}
+.signin h2{font-size:20px;margin:0 0 6px;}
+.signin p{color:var(--text-dim);font-size:14px;margin:0 0 20px;}
+.signin #gsiBtn{display:inline-block;min-height:44px;}
+.signin .fine{color:var(--text-dim);font-size:12px;margin-top:16px;}
+.admin-row .owner-toggle{margin-left:auto;margin-right:6px;}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;}
+.panel.checked{border-color:var(--green);}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;margin:0 0 8px;}
+.status{display:flex;align-items:center;gap:16px;font-size:22px;line-height:1.2;font-weight:700;margin:0 0 6px;letter-spacing:-0.01em;}
+.status .dot{flex:0 0 10px;width:10px;height:10px;margin-left:9px;border-radius:50%;background:var(--text-dim);}
+.status .dot.open{background:var(--maize);animation:ripple 1.6s ease-out infinite;}
+@keyframes ripple{0%{box-shadow:0 0 0 0 rgba(255,203,5,.65);}100%{box-shadow:0 0 0 9px rgba(255,203,5,0);}}
+@media (prefers-reduced-motion: reduce){.status .dot.open{animation:none;box-shadow:0 0 0 4px var(--maize-dim);}}
+.status .dot.done{background:var(--green);}
+.detail{color:var(--text-dim);font-size:14px;}
+
+.btn{display:block;width:100%;margin-top:16px;background:var(--maize);color:var(--bg);border:none;border-radius:8px;padding:14px;font-weight:700;font-size:15px;font-family:'Inter',sans-serif;cursor:pointer;letter-spacing:.02em;}
+.btn:hover{filter:brightness(1.08);}
+.btn:disabled{opacity:.4;cursor:not-allowed;filter:none;}
+
+.banner{border-radius:8px;padding:10px 12px;margin-top:12px;font-size:13.5px;background:var(--surface-2);}
+.banner.ok{border:1px solid var(--green);color:var(--text);}
+.banner.bad{border:1px dashed var(--red);color:var(--text);}
+.banner .tag{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+.banner.ok .tag{color:var(--green);} .banner.bad .tag{color:var(--red);}
+
+.gate{text-align:center;padding:60px 20px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);}
+.gate p{color:var(--text-dim);font-size:14px;margin:0;}
+.gate .err{color:var(--red);font-size:13px;margin-top:14px;line-height:1.5;}
+.gate .who{color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11.5px;margin-top:18px;}
+.loc-help{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-top:14px;text-align:left;}
+.loc-help h3{margin:0 0 4px;font-size:14px;}
+.loc-help .sub{color:var(--text-dim);font-size:12px;margin-bottom:12px;}
+.loc-help details:last-child{margin-bottom:0;}
+.loc-help .lh-title{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;margin:0 0 8px;}
+.loc-help details{margin-bottom:8px;}
+.loc-help summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:14px;font-weight:600;color:var(--text);}
+.loc-help summary:hover{border-color:var(--blue);}
+.loc-help summary::-webkit-details-marker{display:none;}
+.loc-help summary::after{content:'▾';color:var(--text-dim);font-size:11px;transition:transform .15s;}
+.loc-help details[open] summary::after{transform:rotate(180deg);}
+.loc-help summary .yours{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--maize);text-transform:uppercase;letter-spacing:.06em;margin-left:8px;}
+.loc-help ol{margin:10px 0 4px;padding-left:22px;font-size:13.5px;line-height:1.5;color:var(--text);}
+.loc-help li{margin-bottom:6px;}
+.loc-help b{color:var(--text);font-weight:600;}
+.loc-help .lh-sub{color:var(--text-dim);font-size:12.5px;margin:6px 0 2px 2px;}
+.help-link{background:none;border:none;color:var(--blue);text-decoration:underline;cursor:pointer;font-size:12.5px;padding:0;font-family:inherit;}
+.swap-link{font-size:12.5px;}
+.my-att{margin-top:18px;}
+.my-att > summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);transition:border-color .15s,color .15s;}
+.my-att > summary::-webkit-details-marker{display:none;}
+.my-att > summary::marker{content:'';}
+.my-att > summary:hover{border-color:var(--blue);color:var(--text);}
+.my-att > summary::after{content:'▾';transition:transform .15s;}
+.my-att[open] > summary{border-bottom-left-radius:0;border-bottom-right-radius:0;color:var(--text);}
+.my-att[open] > summary::after{transform:rotate(180deg);}
+.my-att .att-body{background:var(--surface);border:1px solid var(--line);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:16px;}
+.att-stat{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}
+.att-stat .big{font-size:30px;font-weight:700;letter-spacing:-0.02em;}
+.att-stat .of{color:var(--text-dim);font-size:14px;}
+.att-bar{height:6px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;margin:4px 0 6px;}
+.att-bar > span{display:block;height:100%;}
+.att-tier{font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
+.t-green{color:var(--green);} .bg-green{background:var(--green);}
+.t-yellow{color:var(--maize);} .bg-yellow{background:var(--maize);}
+.t-red{color:var(--red);} .bg-red{background:var(--red);}
+.att-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
+.att-row:last-child{border-bottom:none;}
+.att-row .st{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
+.exc-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-top:14px;text-align:left;}
+.exc-drop{margin-top:10px;}
+.exc-drop .att-body.exc-card{margin-top:0;border-top:none;border-radius:0 0 var(--radius) var(--radius);}
+.exc-card h3{margin:0 0 4px;font-size:14px;}
+.exc-card .sub{color:var(--text-dim);font-size:12px;margin-bottom:12px;}
+.exc-card textarea.input{width:100%;min-height:72px;resize:vertical;font-family:'Inter',sans-serif;line-height:1.4;}
+.exc-card input[type=date].input{width:100%;display:block;}
+.exc-card input[type=date].input::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.8;}
+.exc-card .row + .row, .exc-card textarea{margin-top:8px;}
+.exc-item{padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;}
+.exc-item:last-child{border-bottom:none;}
+.exc-item .top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.exc-item .top .right{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.exc-item .top .x-btn{margin-right:-6px;}
+.exc-item .why{color:var(--text-dim);font-size:12.5px;margin-top:3px;word-break:break-word;}
+.exc-item .actions{display:flex;gap:6px;margin-top:8px;}
+.exc-item .actions .btn{width:96px;flex:0 0 96px;text-align:center;}
+.pill{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.06em;border-radius:20px;padding:2px 9px;border:1px solid;white-space:nowrap;}
+.pill.pending{color:var(--maize);border-color:var(--maize);background:var(--maize-dim);}
+.pill.approved{color:var(--green);border-color:var(--green);background:#4caf7d22;}
+.pill.denied{color:var(--red);border-color:var(--red);background:#ff6b6b1f;}
+.pill.attended{color:var(--blue);border-color:var(--blue);background:#6fa8dc22;}
+.t-blue{color:var(--blue);}
+.carousel .slide{min-height:64px;}
+.carousel .slide .exc-item{border-bottom:none;padding-top:4px;}
+.car-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;}
+.car-btn{width:40px;height:34px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-size:18px;line-height:1;cursor:pointer;}
+.car-btn:hover:not(:disabled){border-color:var(--blue);}
+.car-btn:disabled{opacity:.35;cursor:default;}
+.car-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;}
+.toggle-row{display:flex;align-items:center;gap:10px;font-size:13px;padding:6px 0;cursor:pointer;}
+.toggle-row input{width:16px;height:16px;accent-color:var(--maize);}
+.exc-rule{border:0;height:1px;background:var(--line);margin:14px 0;}
+.note .sep{color:var(--text-dim);margin:0 6px;}
+.note{color:var(--text-dim);font-size:12.5px;text-align:center;padding:14px 8px 0;}
+.admin-divider{display:flex;align-items:center;gap:12px;margin:32px 0 18px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;}
+.admin-divider::before,.admin-divider::after{content:'';flex:1;height:1px;background:var(--line);}
+.admin-badge{background:var(--maize-dim);color:var(--maize);border:1px solid var(--maize);border-radius:20px;padding:2px 9px;font-size:10.5px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.06em;}
+/* admin cards: values copied from the carpool site's Index.html (.admin-panel, .admin-add, .dropdown-row, .week-cell, .time-input) */
+.admin-card{background:var(--surface);border:1px solid var(--maize);border-radius:var(--radius);padding:16px;margin-bottom:18px;}
+.admin-card h3{margin:0 0 4px;font-size:14px;}
+.admin-card .sub{color:var(--text-dim);font-size:12px;margin-bottom:12px;}
+.row{display:flex;flex-wrap:wrap;gap:6px;}
+.input{flex:1;min-width:120px;max-width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;color-scheme:dark;}
+.input::placeholder{color:var(--text-dim);}
+.input:focus{border-color:var(--blue);}
+.input.date{flex:0 0 auto;min-width:0;}
+.input.num{flex:0 0 110px;width:110px;min-width:0;}
+.btn.small{width:auto;margin-top:0;padding:8px 14px;font-size:13px;border-radius:6px;white-space:nowrap;letter-spacing:0;}
+.btn.secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--line);}
+.admin-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;}
+.admin-row:last-child{border-bottom:none;}
+.admin-row .meta{color:var(--text-dim);font-size:11px;font-family:'JetBrains Mono',monospace;}
+.admin-row .tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;margin-left:6px;}
+.x-btn{background:none;border:none;color:var(--text-dim);font-size:13px;line-height:1;cursor:pointer;padding:4px 6px;}
+.x-btn:hover{color:var(--red);}
+.drop summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);transition:border-color .15s,color .15s;}
+.drop summary::-webkit-details-marker{display:none;}
+.drop summary::marker{content:'';}
+.drop summary:hover{border-color:var(--blue);color:var(--text);}
+.drop summary::after{content:'▾';flex-shrink:0;transition:transform .15s;}
+.drop[open] summary::after{transform:rotate(180deg);}
+.drop + .row{margin-top:12px;}
+.mini-label{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;margin:0 0 6px;}
+.link{color:var(--blue);font-size:12px;text-decoration:underline;}
+/* practice day picker = carpool .week-grid / .week-cell */
+.day-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.day-tile{position:relative;flex:1 1 0;min-width:56px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 4px 7px;text-align:center;cursor:pointer;color:var(--text);font-family:'Inter',sans-serif;}
+.day-tile:hover{border-color:var(--blue);}
+.day-tile.on{border-color:var(--maize);background:var(--maize-dim);}
+.day-tile.on:hover{border-color:var(--maize);}
+.day-tile .d{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;color:var(--text-dim);}
+.day-tile.on .d{color:var(--text);}
+.day-tile .dt{font-size:11px;font-style:italic;color:var(--text-dim);margin-top:2px;}
+.day-tile .off-x{position:absolute;top:1px;right:4px;font-size:12px;line-height:1;color:var(--text-dim);}
+.day-tile .off-x:hover{color:var(--red);}
+.day-tile.busy{opacity:.5;pointer-events:none;}
+.card-note{color:var(--text-dim);font-size:12px;margin:16px 0 12px;}
+@media (max-width:480px){.sched-row{flex-wrap:wrap;}}
+.sched-row .times{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.sched-row .times span{color:var(--text-dim);font-size:12px;}
+.input.time{flex:0 0 auto;min-width:0;padding:6px 8px;font-size:13px;}
+.empty{color:var(--text-dim);font-size:13px;font-style:italic;padding:4px 0;}
+.btn .loading-dots{margin-left:2px;}
+.loading-dots{display:inline-flex;gap:4px;align-items:center;justify-content:center;height:1em;vertical-align:middle;}
+.loading-dots span{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;animation:loading-dot-bounce 0.9s infinite ease-in-out both;}
+.loading-dots span:nth-child(1){animation-delay:-0.32s;}
+.loading-dots span:nth-child(2){animation-delay:-0.16s;}
+.loading-dots span:nth-child(3){animation-delay:0s;}
+@keyframes loading-dot-bounce{0%,80%,100%{transform:scale(0.4);opacity:0.4;}40%{transform:scale(1);opacity:1;}}
+.btn.busy,.btn.busy:disabled,.x-btn.busy{opacity:.75;pointer-events:none;cursor:default;}
+.loading{text-align:center;color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:12px;padding:30px 0;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <img class="header-logo" alt="Michigan Climbing" src="data:image/png;base64,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" onerror="this.style.display='none'">
+    <div>
+      <div class="eyebrow">Michigan Climbing Team · Attendance</div>
+      <h1>Practice Attendance</h1>
+      <div class="date-line" id="dateLine">loading<span class="loading-dots"><span></span><span></span><span></span></span></div>
+    </div>
+  </header>
+
+  <div id="gate" class="gate" style="display:none;">
+    <p id="gateMsg">Check-ins are restricted right now.</p>
+    <div class="err" id="gateErr">You're not on the team roster, so you don't have access to this page. Contact a team admin if you think this is a mistake.</div>
+  </div>
+
+  <div class="signin" id="signin" style="display:none">
+    <h2>Sign in to check in</h2>
+    <p>Use your @umich.edu Google account. You'll stay signed in for about a month.</p>
+    <div id="gsiBtn"></div>
+    <div id="signinMsg"></div>
+    <div class="fine">Only Michigan Climbing Team roster members can use this page.</div>
+  </div>
+
+  <div class="account-bar hidden" id="acct" style="display:none">
+    <div class="who">
+      <span id="email"></span>
+      <span class="admin-badge" id="acctBadge" style="display:none">Admin</span>
+    </div>
+    <button type="button" class="help-link signout" id="signOutBtn" style="display:none">Sign out</button>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="loading" id="loading">loading<span class="loading-dots"><span></span><span></span><span></span></span></div>
+    <div id="body" style="display:none">
+      <div class="section-label">Today's practice</div>
+      <div class="status"><span class="dot" id="dot"></span><span id="status"></span></div>
+      <div class="detail" id="detail"></div>
+      <button class="btn" id="btn" disabled>Check In</button>
+      <div id="msg"></div>
+      <div class="loc-help" id="locHelp" style="display:none">
+        <h3>How to Turn On Location</h3>
+        <div class="sub">Pick your phone and follow the steps, then reload this page.</div>
+        <details id="helpIos">
+          <summary><span>iPhone<span class="yours" id="yoursIos" style="display:none">your phone</span></span></summary>
+          <ol>
+            <li>Open <b>Settings → Privacy &amp; Security → Location Services</b> and make sure it's <b>on</b>.</li>
+            <li>In that list, tap <b>Safari Websites</b> → choose <b>While Using the App</b>, and turn on <b>Precise Location</b>.</li>
+            <li>Back on this page, tap the <b>≡</b> or <b>aA</b> icon in the address bar → <b>Website Settings</b> → <b>Location</b> → <b>Allow</b>.</li>
+            <li>Reload this page, tap <b>Check In</b>, then tap <b>Allow</b>.</li>
+          </ol>
+          <div class="lh-sub">Using Chrome on iPhone? Go to <b>Settings → Apps → Chrome → Location</b> → <b>While Using the App</b>, with <b>Precise Location</b> on.</div>
+        </details>
+        <details id="helpAndroid">
+          <summary><span>Android<span class="yours" id="yoursAndroid" style="display:none">your phone</span></span></summary>
+          <ol>
+            <li>Swipe down from the top of the screen and make sure <b>Location</b> is <b>on</b>.</li>
+            <li>Open <b>Settings → Apps → Chrome → Permissions → Location</b> → <b>Allow only while using the app</b>, and turn on <b>Use precise location</b>.</li>
+            <li>Back on this page, tap the icon to the left of the web address → <b>Permissions</b> (or <b>Site settings</b>) → <b>Location</b> → <b>Allow</b>.</li>
+            <li>Reload this page, tap <b>Check In</b>, then tap <b>Allow</b>.</li>
+          </ol>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">Your location is read once when you tap "Check In" and saved only with your check-in. Allow location access when your browser asks.<br><button type="button" class="help-link" id="helpLink">Location not working?</button></div>
+
+  <details class="my-att" id="myAtt" style="display:none">
+    <summary>Check my attendance</summary>
+    <div class="att-body" id="myAttBody"><div class="loading">loading<span class="loading-dots"><span></span><span></span><span></span></span></div></div>
+  </details>
+
+  <details class="my-att exc-drop" id="excBox" style="display:none">
+    <summary>Request an excused absence</summary>
+    <div class="att-body exc-card">
+    <div class="sub">Pick the practice you'll miss (or missed) and say why. An admin will approve or deny it; approved absences count toward your attendance.</div>
+    <input type="date" class="input" id="excDate" aria-label="Practice day">
+    <textarea class="input" id="excReason" maxlength="500" placeholder="Reason (e.g. exam, sick, etc)" aria-label="Reason"></textarea>
+    <div class="row" style="margin-top:8px"><button class="btn small" id="excSubmit">Submit Request</button></div>
+    <div id="excMsg"></div>
+    <hr class="exc-rule" style="margin-top:16px">
+    <div class="section-label" id="excListLabel">Pending requests</div>
+    <div class="carousel" id="excList"><div class="empty">Loading…</div></div>
+    <hr class="exc-rule">
+    <details class="drop" id="excPastBox">
+      <summary id="excPastLabel">Past requests</summary>
+      <div class="drop-body" id="excPast"></div>
+    </details>
+    </div>
+  </details>
+
+  <div class="admin-divider" id="adminDivider" style="display:none">Admin Tools</div>
+
+  <div id="adminPanel" style="display:none">
+    <div class="admin-card">
+      <h3>Admin — check someone in</h3>
+      <div class="sub">Phone died or they forgot? Check a teammate in by their uniqname or umich.edu email. No location needed, and it works for today or a past practice.</div>
+      <datalist id="rosterList"></datalist>
+      <div class="row">
+        <input class="input grow" id="who" list="rosterList" placeholder="uniqname or teammate@umich.edu" autocomplete="off" aria-label="Email or uniqname">
+        <input class="input date" id="when" type="date" aria-label="Practice date">
+        <button class="btn small" id="adminCheckBtn">Check In</button>
+      </div>
+      <div id="adminMsg"></div>
+    </div>
+
+    <div class="admin-card">
+      <h3>Admin — today's check-ins</h3>
+      <div class="sub">Everyone checked in today, including people added by an admin. Reload the page to see new check-ins.</div>
+      <details class="drop" id="todayBox">
+        <summary id="todayLabel">Loading</summary>
+        <div class="drop-body" id="todayList"></div>
+      </details>
+    </div>
+
+    <div class="admin-card">
+      <h3>Admin — excused absences</h3>
+      <div class="sub">Requests from the "Request an excused absence" link. Approving marks them present ("E") for that practice; it counts toward their attendance.</div>
+      <hr class="exc-rule">
+      <div class="section-label" id="excPendingLabel">Pending</div>
+      <div class="carousel" id="excPending"></div>
+      <hr class="exc-rule">
+      <details class="drop" id="excRecentBox">
+        <summary id="excRecentLabel">Past decisions</summary>
+        <div class="drop-body" id="excRecent"></div>
+      </details>
+      <details class="drop" id="excAddBox" style="margin-top:12px">
+        <summary>Add an excused absence</summary>
+        <div class="drop-body exc-add">
+          <div class="row">
+            <input class="input grow" id="excWho" list="rosterList" placeholder="uniqname or teammate@umich.edu" autocomplete="off" aria-label="Email or uniqname">
+            <input class="input date" id="excWhen" type="date" aria-label="Practice date">
+          </div>
+          <div class="row" style="margin-top:8px">
+            <input class="input grow" id="excWhy" maxlength="500" placeholder="Note (optional)" aria-label="Note">
+            <button class="btn small" id="excAddBtn">Add Excused</button>
+          </div>
+          <div id="excAddMsg"></div>
+        </div>
+      </details>
+      <hr class="exc-rule">
+      <label class="toggle-row"><input type="checkbox" id="excMailPerson"> Email the person when their request is approved or denied</label>
+      <label class="toggle-row"><input type="checkbox" id="excMailAdmins"> Email admins when a new request comes in</label>
+      <div id="excAdminMsg"></div>
+    </div>
+
+    <div class="admin-card">
+      <h3>Admin — practice schedule</h3>
+      <div class="sub">Tap a day to turn on check-in for it, or the × to turn it off. Applies every week.</div>
+      <div class="day-grid" id="dayGrid"></div>
+      <div class="card-note">Check-in window for each practice day:</div>
+      <div id="schedRows"></div>
+      <div id="schedMsg"></div>
+    </div>
+
+    <div class="admin-card">
+      <h3>Admin — roster</h3>
+      <div class="sub">Only people on the roster can check in. Add by uniqname or umich.edu email, or paste several separated by commas. Names are pulled from the UMich directory.</div>
+      <details class="drop" id="rosterBox">
+        <summary id="rosterLabel">Roster</summary>
+        <div class="drop-body" id="rosterRows"></div>
+      </details>
+      <div class="row">
+        <input class="input grow" id="rosterAdd" placeholder="teammate@umich.edu (or paste several, comma-separated)" aria-label="Uniqnames or emails to add">
+        <button class="btn small secondary" id="rosterAddBtn">Add</button>
+      </div>
+      <div id="rosterMsg"></div>
+    </div>
+
+    <div class="admin-card" id="adminsSection" style="display:none">
+      <h3>Admin — manage access</h3>
+      <div class="sub">Admins can check anyone in and handle excused absences. Owners can also manage access, the gym location and emails. Hand the team off by making next year's officers owners.</div>
+      <details class="drop" id="adminsBox">
+        <summary id="adminsLabel">Admins</summary>
+        <div class="drop-body" id="adminList"></div>
+      </details>
+      <div class="row">
+        <input class="input grow" id="newAdmin" placeholder="teammate@umich.edu" aria-label="New admin email or uniqname">
+        <button class="btn small secondary" id="addAdminBtn">Add Admin</button>
+      </div>
+      <div id="adminsMsg"></div>
+      <hr class="exc-rule">
+      <div class="section-label">Emails</div>
+      <div class="row">
+        <input class="input grow" id="mailName" placeholder="Sender name" aria-label="Sender name">
+        <input class="input grow" id="mailReply" placeholder="Replies go to (uniqname or email)" aria-label="Reply-to email">
+        <button class="btn small secondary" id="mailSaveBtn">Save</button>
+      </div>
+      <div id="mailMsg"></div>
+    </div>
+
+    <div class="admin-card" id="locationCard" style="display:none">
+      <h3>Admin — gym location</h3>
+      <div class="sub">Where check-in works. Paste coordinates from Google Maps (right-click the gym, click the numbers) or a Google Maps link, or stand in the gym and tap Use My Location.</div>
+      <div class="row">
+        <input class="input grow" id="locText" placeholder="42.29360, -83.71660 or a Google Maps link" aria-label="Gym location">
+        <button class="btn small secondary" id="locHereBtn">Use My Location</button>
+      </div>
+      <div class="row" style="margin-top:10px;align-items:flex-end">
+        <div><label class="mini-label" for="locRadius">Radius (m)</label><input class="input num" id="locRadius" inputmode="numeric"></div>
+        <div><label class="mini-label" for="locAcc">Max GPS error (m)</label><input class="input num" id="locAcc" inputmode="numeric"></div>
+        <button class="btn small" id="locSaveBtn">Save</button>
+      </div>
+      <div style="margin-top:10px"><a class="link" id="locMap" href="#" target="_blank" rel="noopener">Check the pin on Google Maps</a></div>
+      <div id="locMsg"></div>
+    </div>
+
+    <div class="admin-card">
+      <h3>Admin — past practices</h3>
+      <div class="sub">Look back at who attended a previous practice (read-only).</div>
+      <div class="row">
+        <select class="input grow" id="pastPick" aria-label="Practice date"></select>
+        <button class="btn small secondary" id="pastBtn">View</button>
+      </div>
+      <div id="pastList" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ===== Where the site talks to the server =====
+  // Inside Apps Script (old link) the page uses google.script.run. On GitHub Pages it calls the Apps Script API
+  // (API_URL) after "Sign in with Google" (GOOGLE_CLIENT_ID). Fill these two in for the GitHub copy; see HANDOFF.md.
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzz5RlH8VZXdk1diNs7cu4glDdsrBpBEt7ZLYSrLP3Z93pAq48UUmwSLN3tXQgPw1oxwA/exec';
+  const GOOGLE_CLIENT_ID = '38091059543-9k4fjddinjsha30f9ljbov9n2avp03pf.apps.googleusercontent.com';
+  const IN_APPS_SCRIPT = !!(window.google && google.script && google.script.run);
+  const SESSION_KEY = 'mca_session';
+  let session = null;
+  function loadSession(){
+    try { const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); if (s && s.exp > Date.now()) return s; } catch (e) {}
+    return null;
+  }
+  function saveSession(s){ session = s; try { if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s)); else localStorage.removeItem(SESSION_KEY); } catch (e) {} }
+  async function callApi(fn, args, extra){
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ fn: fn, args: args, session: session && session.session }, extra || {})) });
+    let out; try { out = await res.json(); } catch (e) { throw new Error("Couldn't reach the server. Check your connection and try again."); }
+    if (!out.ok){ if (out.auth){ saveSession(null); showSignIn('Your sign-in expired. Sign in again.'); } throw new Error(out.error || 'Something went wrong.'); }
+    return out.result;
+  }
+  // Same shape as google.script.run: serverRun().withSuccessHandler(ok).withFailureHandler(fail).someFunction(args...)
+  function serverRun(){
+    if (IN_APPS_SCRIPT) return google.script.run;
+    const h = { ok: () => {}, fail: e => console.error(e) };
+    const runner = new Proxy({}, { get(_, name){
+      if (name === 'withSuccessHandler') return f => { h.ok = f || h.ok; return runner; };
+      if (name === 'withFailureHandler') return f => { h.fail = f || h.fail; return runner; };
+      return (...args) => { callApi(String(name), args).then(r => h.ok(r), e => h.fail(e instanceof Error ? e : new Error(String(e)))); };
+    }});
+    return runner;
+  }
+  function showSignIn(msg){
+    ['acct', 'panel', 'gate', 'myAtt', 'excBox', 'adminPanel', 'adminDivider', 'locHelp'].forEach(id => { const n = document.getElementById(id); if (n) n.style.display = 'none'; });
+    document.querySelectorAll('.note').forEach(n => n.style.display = 'none');
+    $('dateLine').textContent = new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+    $('signin').style.display = 'block';
+    if (msg) showIn('signinMsg', 'bad', msg, 'Sign in'); else $('signinMsg').innerHTML = '';
+    renderGoogleButton();
+  }
+  function renderGoogleButton(){
+    if (!window.google || !google.accounts || !google.accounts.id){ setTimeout(renderGoogleButton, 200); return; }
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, hd: 'umich.edu', auto_select: true, ux_mode: 'popup',
+      callback: r => {
+        showIn('signinMsg', '', '');
+        callApi('signIn', [], { idToken: r.credential }).then(s => { saveSession(s); $('signin').style.display = 'none'; startApp(); })
+          .catch(e => showIn('signinMsg', 'bad', errText(e), "Couldn't sign in"));
+      } });
+    $('gsiBtn').innerHTML = '';
+    google.accounts.id.renderButton($('gsiBtn'), { theme: 'filled_black', size: 'large', shape: 'pill', text: 'signin_with' });
+  }
+  function startApp(){
+    $('signin').style.display = 'none'; $('panel').style.display = '';
+    document.querySelectorAll('.note').forEach(n => n.style.display = '');
+    if (!IN_APPS_SCRIPT) $('signOutBtn').style.display = 'inline';
+    load();
+  }
+
+  const $ = id => document.getElementById(id);
+  function showIn(boxId, kind, text, tag){
+    const box = $(boxId); box.innerHTML = '';
+    if (!text) return;
+    const d = document.createElement('div'); d.className = 'banner ' + kind;
+    const t = document.createElement('span'); t.className = 'tag'; t.textContent = tag || (kind === 'ok' ? 'Checked in' : "Couldn't check in");
+    d.appendChild(t); d.appendChild(document.createTextNode(text)); box.appendChild(d);
+  }
+  function show(kind, text, tag){ showIn('msg', kind, text, tag); }
+  // Same loading state as the carpool site: the button's label becomes three bouncing dots.
+  function setBusy(btn, on, label){
+    if (on){
+      if (!btn.classList.contains('busy')){ btn.dataset.label = btn.textContent; btn.style.minWidth = btn.offsetWidth + 'px'; }
+      btn.disabled = true; btn.classList.add('busy'); btn.setAttribute('aria-busy', 'true');
+      btn.innerHTML = '';
+      if (label){ btn.appendChild(document.createTextNode(label + ' ')); }
+      const dots = document.createElement('span'); dots.className = 'loading-dots';
+      dots.innerHTML = '<span></span><span></span><span></span>'; btn.appendChild(dots);
+    } else {
+      btn.disabled = false; btn.classList.remove('busy'); btn.removeAttribute('aria-busy'); btn.style.minWidth = '';
+      btn.textContent = label || btn.dataset.label || '';
+    }
+  }
+  function errText(e){ return (e && e.message ? e.message : String(e)).replace(/^Exception:\s*/, '').replace(/^Error:\s*/, ''); }
+  function setState(dotClass, status, detail, btnEnabled, btnText){
+    $('dot').className = 'dot' + (dotClass ? ' ' + dotClass : '');
+    $('status').textContent = status; $('detail').textContent = detail;
+    $('btn').classList.remove('busy'); $('btn').removeAttribute('aria-busy');
+    $('btn').disabled = !btnEnabled; $('btn').textContent = btnText || 'Check In';
+    $('panel').classList.toggle('checked', dotClass === 'done');
+  }
+
+  // Same full gate as the carpool site: not on the roster (and not an admin) = no access to the page.
+  function showAccessBlocked(s){
+    ['acct', 'panel'].forEach(id => $(id).style.display = 'none');
+    document.querySelectorAll('.note').forEach(n => n.style.display = 'none');
+    $('gate').style.display = 'block';
+  }
+
+  // Header date spelled out, e.g. "Wednesday, October 7".
+  function longDate(s){
+    if (!s.todayISO) return s.dateLabel;
+    const [y,m,d] = s.todayISO.split('-').map(Number);
+    return new Date(y, m-1, d).toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+  }
+  function render(s){
+    $('dateLine').textContent = longDate(s);
+    if (!s.onRoster && !s.isAdmin){ showAccessBlocked(s); return; }
+    lastStatus = s;
+    $('myAtt').style.display = 'block'; $('excBox').style.display = 'block';
+    $('loading').style.display = 'none'; $('body').style.display = 'block';
+    $('dateLine').textContent = longDate(s);
+    if (s.email){ $('acct').style.display = 'flex'; $('email').textContent = s.email; }
+    $('acctBadge').style.display = s.isAdmin ? 'inline-block' : 'none';
+    if (s.isAdmin && !adminLoaded){ adminLoaded = true; $('adminPanel').style.display = 'block'; $('adminDivider').style.display = 'flex';
+      loadAdmin(); }
+    if (!s.onRoster){
+      setState('', "You're Not on the Roster",
+        s.email ? 'Ask an officer to add ' + s.email + ', then reload this page.' : 'Open this link while signed in to your @umich.edu Google account.', false);
+    } else if (s.checkedInAt){
+      if (s.checkedInAt === 'excused'){
+        // Excused, but if they make it to practice they can still check in and get a Y instead of an E.
+        if (s.open) setState('open', "You're Excused Today", 'Made it to practice after all? Check in and it counts as attended instead of excused.', true);
+        else setState('done', "You're Excused Today", 'An admin approved your excused absence for today.', false, 'Excused ✓');
+      }
+      else setState('done', "You're Checked In", 'Today at ' + s.checkedInAt + '. See you on the wall.', false, 'Checked In ✓');
+    } else if (s.open){
+      setState('open', 'Check-In Is Open', s.message, true);
+    } else {
+      setState('', "Check-In Isn't Open", s.message, false);
+    }
+  }
+
+  function load(){
+    serverRun()
+      .withSuccessHandler(render)
+      .withFailureHandler(e => { $('loading').style.display = 'none'; $('body').style.display = 'block';
+        $('dateLine').textContent = new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+        setState('', 'Check-In Is Unavailable', 'An officer needs to fix the Settings tab.', false); show('bad', errText(e), 'Settings problem'); })
+      .getStatus();
+  }
+
+  // Watch GPS for a few seconds and keep the most accurate reading (indoor first fixes are often poor).
+  function bestPosition(maxWaitMs, goodEnoughM){
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) return reject(new Error("This browser can't share location."));
+      let best = null, done = false, wid, timer;
+      const finish = () => {
+        if (done) return; done = true;
+        navigator.geolocation.clearWatch(wid); clearTimeout(timer);
+        if (best) return resolve(best);
+        const er = new Error("Couldn't get a GPS reading. Try again in a few seconds, ideally near a window. If it keeps failing, check the steps below."); er.locHelp = true; reject(er);
+      };
+      wid = navigator.geolocation.watchPosition(
+        p => { if (!best || p.coords.accuracy < best.coords.accuracy) best = p; if (p.coords.accuracy <= goodEnoughM) finish(); },
+        err => { if (err.code === 1) { done = true; navigator.geolocation.clearWatch(wid); clearTimeout(timer);
+                  const er = new Error('Location access is blocked. Follow the steps below to turn it on, then reload.'); er.locHelp = true; reject(er); } },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: maxWaitMs }
+      );
+      timer = setTimeout(finish, maxWaitMs);
+    });
+  }
+
+  // ---------- admin panel ----------
+  let adminLoaded = false;
+  function todayISO(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  function loadAdmin(){
+    serverRun().withSuccessHandler(renderAdmin)
+      .withFailureHandler(e => { $('todayList').innerHTML = ''; showIn('adminMsg', 'bad', errText(e), 'Admin error'); })
+      .getAdminData();
+  }
+
+  function renderAdmin(d){
+    if (!$('when').value){ $('when').value = d.todayLabel || todayISO(); }
+    $('when').max = d.todayLabel || todayISO();
+    const dl = $('rosterList'); dl.innerHTML = '';
+    d.roster.forEach(r => { const o = document.createElement('option'); o.value = r.email; o.label = r.name || r.email; if (r.name) o.textContent = r.name; dl.appendChild(o); });
+
+    $('todayLabel').textContent = d.today.length + (d.today.length === 1 ? ' person' : ' people') + ' checked in';
+    const tl = $('todayList'); tl.innerHTML = '';
+    if (!d.today.length) tl.appendChild(el('div', 'empty', 'No one yet.'));
+    d.today.slice().reverse().forEach(r => tl.appendChild(checkinRow(r, d.todayLabel, 'adminMsg')));
+
+    renderPast(d); renderSchedule(d); renderRoster(d); renderLocation(d); renderExcusedAdmin(d.excused);
+
+    $('adminsSection').style.display = d.isOwner ? 'block' : 'none';
+    if (d.isOwner){
+      const n = d.admins.length; $('adminsLabel').textContent = n + (n === 1 ? ' admin' : ' admins');
+      const al = $('adminList'); al.innerHTML = '';
+      if (!n) al.appendChild(el('div', 'empty', 'No one listed yet.'));
+      d.admins.forEach(a => {
+        const row = el('div', 'admin-row'); row.appendChild(el('span', '', a.email + (a.email === d.me ? ' (you)' : '')));
+        if (a.owner) row.appendChild(el('span', 'meta', 'owner'));
+        const t = el('button', 'help-link owner-toggle', a.owner ? 'Remove owner' : 'Make owner'); t.type = 'button';
+        t.onclick = () => { if (!confirm((a.owner ? 'Make ' + a.email + ' a regular admin?' : 'Make ' + a.email + ' an owner? Owners can manage admins, the gym location and emails.'))) return;
+          setBusy(t, true);
+          serverRun().withSuccessHandler(renderAdmin)
+            .withFailureHandler(e => { setBusy(t, false, a.owner ? 'Remove owner' : 'Make owner'); showIn('adminsMsg', 'bad', errText(e), 'Error'); }).setOwner(a.email, !a.owner); };
+        row.appendChild(t);
+        const x = el('button', 'x-btn', '×'); x.setAttribute('aria-label', 'Remove admin ' + a.email);
+        x.onclick = () => { if (!confirm('Remove ' + a.email + ' as an admin?')) return;
+          setBusy(x, true);
+          serverRun().withSuccessHandler(renderAdmin)
+            .withFailureHandler(e => { setBusy(x, false, '×'); showIn('adminsMsg', 'bad', errText(e), 'Error'); }).removeAdmin(a.email); };
+        row.appendChild(x); al.appendChild(row);
+      });
+      if (d.mail && !mailFilled){ mailFilled = true; $('mailName').value = d.mail.senderName || ''; $('mailReply').value = d.mail.replyTo || ''; }
+    }
+  }
+  let mailFilled = false;
+  $('mailSaveBtn').onclick = () => {
+    const btn = $('mailSaveBtn'); setBusy(btn, true); showIn('mailMsg', '', '');
+    serverRun().withSuccessHandler(d => { setBusy(btn, false, 'Save'); mailFilled = false; renderAdmin(d); showIn('mailMsg', 'ok', 'Emails will come from "' + d.mail.senderName + '"' + (d.mail.replyTo ? ' and replies go to ' + d.mail.replyTo : '') + '.', 'Saved'); })
+      .withFailureHandler(e => { setBusy(btn, false, 'Save'); showIn('mailMsg', 'bad', errText(e), "Couldn't save"); })
+      .setMailSettings($('mailName').value, $('mailReply').value);
+  };
+
+  function fmtDay(iso){ const [y,m,dd] = iso.split('-').map(Number); return new Date(y, m-1, dd).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}); }
+  function addDays(iso, n){ const [y,m,dd] = iso.split('-').map(Number); const t = new Date(y, m-1, dd + n); return t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0'); }
+  function run(fn, args, ok, fail){ const r = serverRun().withSuccessHandler(ok).withFailureHandler(fail); r[fn].apply(r, args); }
+
+  // One check-in in a list, with an × that deletes it (after a confirm).
+  function checkinRow(r, date, msgBox, isPast){
+    const row = el('div', 'admin-row');
+    const left = el('div'); left.appendChild(el('span', '', r.name || r.email));
+    if (r.excused) left.appendChild(el('span', 'tag', 'excused'));
+    else if (r.byAdmin) left.appendChild(el('span', 'tag', 'by admin'));
+    const right = el('span'); right.style.display = 'flex'; right.style.alignItems = 'center'; right.style.gap = '8px';
+    right.appendChild(el('span', 'meta', r.time));
+    const x = el('button', 'x-btn', '×'); x.type = 'button';
+    x.setAttribute('aria-label', 'Remove check-in for ' + (r.name || r.email));
+    x.onclick = () => {
+      if (!confirm('Remove ' + (r.name || r.email) + "'s check-in for " + fmtDay(date) + '?')) return;
+      setBusy(x, true);
+      run('removeCheckIn', [date, r.email], d => {
+        renderAdmin(d);
+        if (isPast) row.remove();
+        if (r.email === ($('email').textContent || '').toLowerCase()) load();
+      }, e => { setBusy(x, false, '×'); if (!isPast) showIn(msgBox, 'bad', errText(e), 'Error'); else alert(errText(e)); });
+    };
+    right.appendChild(x);
+    row.appendChild(left); row.appendChild(right);
+    return row;
+  }
+
+  // Past practices
+  function renderPast(d){
+    const sel = $('pastPick'), keep = sel.value; sel.innerHTML = '';
+    if (!d.practices.length){ const o = el('option', '', 'No practices yet'); o.value = ''; sel.appendChild(o); $('pastBtn').disabled = true; return; }
+    $('pastBtn').disabled = false;
+    d.practices.forEach(p => { const o = el('option', '', fmtDay(p.date) + (p.date === d.todayLabel ? ' (today)' : '') + ' · ' + p.count + (p.count === 1 ? ' person' : ' people')); o.value = p.date; sel.appendChild(o); });
+    if (keep && d.practices.some(p => p.date === keep)) sel.value = keep;
+  }
+  $('pastBtn').onclick = () => {
+    const date = $('pastPick').value, btn = $('pastBtn'); if (!date) return;
+    setBusy(btn, true);
+    run('getPractice', [date], rows => {
+      setBusy(btn, false, 'View');
+      const box = $('pastList'); box.innerHTML = '';
+      if (!rows.length){ box.appendChild(el('div', 'empty', 'No one checked in.')); return; }
+      rows.forEach(r => box.appendChild(checkinRow(r, date, 'pastList', true)));
+    }, e => { setBusy(btn, false, 'View'); showIn('pastList', 'bad', errText(e), 'Error'); });
+  };
+
+  // Practice schedule
+  let schedBusy = false;
+  function saveDay(day, open, close, onDone){
+    if (schedBusy) return; schedBusy = true; showIn('schedMsg', '', '');
+    run('setScheduleDay', [day, open, close], d => { schedBusy = false; renderAdmin(d); onDone && onDone(true); },
+      e => { schedBusy = false; showIn('schedMsg', 'bad', errText(e), 'Error'); onDone && onDone(false); });
+  }
+  function renderSchedule(d){
+    const grid = $('dayGrid'); grid.innerHTML = '';
+    const firstOn = d.schedule.find(s => s.active && s.open && s.close);
+    d.schedule.forEach((s, i) => {
+      const t = el('button', 'day-tile' + (s.active ? ' on' : ''));
+      t.type = 'button';
+      t.setAttribute('aria-pressed', s.active ? 'true' : 'false');
+      t.setAttribute('aria-label', s.day + (s.active ? ' (on, tap to turn off)' : ' (off, tap to turn on)'));
+      t.appendChild(el('div', 'd', s.day.slice(0, 3).toUpperCase()));
+      t.appendChild(el('div', 'dt', fmtDay(addDays(d.weekStart, i)).replace(/^\w+, /, '')));
+      if (s.active) t.appendChild(el('span', 'off-x', '×'));
+      t.onclick = () => {
+        if (s.active){
+          if (!confirm('Turn off check-in on ' + s.day + 's?')) return;
+          t.classList.add('busy'); saveDay(s.day, '', '', ok => { if (!ok) t.classList.remove('busy'); });
+        } else {
+          t.classList.add('busy');
+          saveDay(s.day, firstOn ? firstOn.open : '18:00', firstOn ? firstOn.close : '22:00', ok => { if (!ok) t.classList.remove('busy'); });
+        }
+      };
+      grid.appendChild(t);
+    });
+    const rows = $('schedRows'); rows.innerHTML = '';
+    const on = d.schedule.filter(s => s.active);
+    if (!on.length){ rows.appendChild(el('div', 'empty', 'No practice days yet. Tap a day above.')); return; }
+    on.forEach(s => {
+      const row = el('div', 'admin-row sched-row');
+      row.appendChild(el('span', '', s.day));
+      const times = el('div', 'times');
+      const o = el('input', 'input time'); o.type = 'time'; o.value = s.open; o.setAttribute('aria-label', s.day + ' opens');
+      const c = el('input', 'input time'); c.type = 'time'; c.value = s.close; c.setAttribute('aria-label', s.day + ' closes');
+      times.appendChild(o); times.appendChild(el('span', '', 'to')); times.appendChild(c);
+      const b = el('button', 'btn small secondary', 'Save'); b.type = 'button';
+      b.onclick = () => { setBusy(b, true); saveDay(s.day, o.value, c.value, ok => {
+        if (ok) showIn('schedMsg', 'ok', s.day + ' check-in saved.', 'Saved'); else setBusy(b, false, 'Save'); }); };
+      times.appendChild(b); row.appendChild(times); rows.appendChild(row);
+    });
+  }
+
+  // Roster
+  function renderRoster(d){
+    const n = d.roster.length;
+    $('rosterLabel').textContent = n + (n === 1 ? ' person' : ' people') + ' on the roster';
+    const box = $('rosterRows'); box.innerHTML = '';
+    if (!n) box.appendChild(el('div', 'empty', 'No one yet.'));
+    d.roster.forEach(r => {
+      const row = el('div', 'admin-row');
+      const left = el('div'); left.appendChild(el('span', '', r.name || r.email.split('@')[0]));
+      if (r.name) { const m = el('span', 'meta', '  ' + r.email); m.style.marginLeft = '8px'; left.appendChild(m); }
+      const x = el('button', 'x-btn', '×'); x.setAttribute('aria-label', 'Remove ' + r.email + ' from the roster');
+      x.onclick = () => { if (!confirm('Remove ' + (r.name || r.email) + ' from the roster? They won\'t be able to check in.')) return;
+        setBusy(x, true);
+        run('removeFromRoster', [r.email], renderAdmin, e => { setBusy(x, false, '×'); showIn('rosterMsg', 'bad', errText(e), 'Error'); }); };
+      row.appendChild(left); row.appendChild(x); box.appendChild(row);
+    });
+  }
+  $('rosterAddBtn').onclick = () => {
+    const v = $('rosterAdd').value.trim(), btn = $('rosterAddBtn'); if (!v) return;
+    setBusy(btn, true); showIn('rosterMsg', '', '');
+    run('addToRoster', [v, ''], d => {
+      setBusy(btn, false, 'Add'); $('rosterAdd').value = ''; renderAdmin(d);
+      let msg = d.added + (d.added === 1 ? ' person' : ' people') + ' added.';
+      if (d.skipped && d.skipped.length) msg += ' Already on the roster: ' + d.skipped.join(', ') + '.';
+      showIn('rosterMsg', d.added ? 'ok' : 'bad', msg, d.added ? 'Saved' : 'Nothing added');
+    }, e => { setBusy(btn, false, 'Add'); showIn('rosterMsg', 'bad', errText(e), 'Error'); });
+  };
+  $('rosterAdd').addEventListener('keydown', e => { if (e.key === 'Enter') $('rosterAddBtn').click(); });
+
+  // Gym location (owner only)
+  let locFilled = false;
+  function renderLocation(d){
+    $('locationCard').style.display = d.isOwner && d.location ? 'block' : 'none';
+    if (!d.location) return;
+    if (!locFilled){ $('locText').value = d.location.text; $('locRadius').value = d.location.radius || 100; $('locAcc').value = d.location.maxAccuracy || 150; locFilled = true; }
+    const map = $('locMap');
+    if (d.location.lat != null){ map.href = 'https://www.google.com/maps?q=' + d.location.lat + ',' + d.location.lng; map.style.display = 'inline'; }
+    else map.style.display = 'none';
+  }
+  $('locHereBtn').onclick = async () => {
+    const btn = $('locHereBtn'); setBusy(btn, true); showIn('locMsg', '', '');
+    try {
+      const p = await bestPosition(15000, 10);
+      $('locText').value = p.coords.latitude.toFixed(6) + ', ' + p.coords.longitude.toFixed(6);
+      showIn('locMsg', 'ok', 'Got your location (±' + Math.round(p.coords.accuracy) + ' m). Tap Save to use it.', 'Location found');
+    } catch (e) { showIn('locMsg', 'bad', e.message, 'Error'); }
+    setBusy(btn, false, 'Use My Location');
+  };
+  $('locSaveBtn').onclick = () => {
+    const btn = $('locSaveBtn'); setBusy(btn, true); showIn('locMsg', '', '');
+    run('saveLocation', [$('locText').value, $('locRadius').value, $('locAcc').value], d => {
+      setBusy(btn, false, 'Save'); locFilled = false; renderAdmin(d); showIn('locMsg', 'ok', 'Gym location saved.', 'Saved'); load();
+    }, e => { setBusy(btn, false, 'Save'); showIn('locMsg', 'bad', errText(e), 'Error'); });
+  };
+
+  function doAdminCheckIn(force){
+    const who = $('who').value.trim(), when = $('when').value, btn = $('adminCheckBtn');
+    if (!who){ showIn('adminMsg', 'bad', 'Enter an email or uniqname.'); return; }
+    setBusy(btn, true); showIn('adminMsg', '', '');
+    serverRun()
+      .withSuccessHandler(r => {
+        setBusy(btn, false, 'Check In');
+        if (r.needsConfirm){
+          if (confirm(r.email + " isn't on the roster. Check them in anyway?")) doAdminCheckIn(true);
+          return;
+        }
+        const who = r.name ? r.name + ' (' + r.email + ')' : r.email;
+        const day = r.date === todayISO() ? 'today' : r.date;
+        showIn('adminMsg', 'ok', r.already ? who + ' was already checked in ' + day + '.' : who + ' is checked in for ' + day + '.');
+        $('who').value = '';
+        loadAdmin(); if (r.email === ($('email').textContent || '').toLowerCase()) load();
+      })
+      .withFailureHandler(e => { setBusy(btn, false, 'Check In'); showIn('adminMsg', 'bad', errText(e)); })
+      .adminCheckIn(who, when, !!force);
+  }
+  $('adminCheckBtn').onclick = () => doAdminCheckIn(false);
+  $('who').addEventListener('keydown', e => { if (e.key === 'Enter') doAdminCheckIn(false); });
+
+  $('addAdminBtn').onclick = () => {
+    const v = $('newAdmin').value.trim(), btn = $('addAdminBtn'); if (!v) return;
+    showIn('adminsMsg', '', ''); setBusy(btn, true);
+    serverRun()
+      .withSuccessHandler(d => { setBusy(btn, false, 'Add Admin'); $('newAdmin').value = ''; renderAdmin(d); showIn('adminsMsg', 'ok', 'Admin added.', 'Saved'); })
+      .withFailureHandler(e => { setBusy(btn, false, 'Add Admin'); showIn('adminsMsg', 'bad', errText(e), 'Error'); })
+      .addAdmin(v);
+  };
+
+  $('btn').onclick = async () => {
+    const btn = $('btn');
+    setBusy(btn, true, 'Getting Your Location'); show('', '');
+    let pos;
+    try { pos = await bestPosition(10000, 25); }
+    catch (e) { show('bad', e.message); if (e.locHelp) showLocHelp(true); setBusy(btn, false, 'Check In'); return; }
+    setBusy(btn, true, 'Checking In');
+    const c = pos.coords;
+    serverRun()
+      .withSuccessHandler(r => {
+        show('ok', r.already ? 'You were already checked in at ' + r.time + '.' : r.time + ' · ' + (r.distanceText || (r.distance + ' m')) + ' from the center of the gym.');
+        load();
+      })
+      .withFailureHandler(e => { show('bad', errText(e)); setBusy(btn, false, 'Check In'); })
+      .checkIn(c.latitude, c.longitude, c.accuracy);
+  };
+
+  // Location help: iPhone + Android steps; the viewer's own phone is opened and labelled.
+  function phoneType(){
+    const ua = navigator.userAgent || '';
+    if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'ios';
+    if (/Android/i.test(ua)) return 'android';
+    return '';
+  }
+  // Always shown as its own box under the "Location not working?" link (outside the check-in panel),
+  // so it expands downward and the page doesn't jump. From an error, it scrolls into view.
+  function showLocHelp(fromError){
+    const box = $('locHelp');
+    document.querySelector('.note').after(box);   // always its own box under the panel, never nested inside it
+    box.style.display = 'block';
+    const t = phoneType();
+    $('yoursIos').style.display = t === 'ios' ? 'inline' : 'none';
+    $('yoursAndroid').style.display = t === 'android' ? 'inline' : 'none';
+    if (t === 'ios') $('helpIos').open = true;
+    else if (t === 'android') $('helpAndroid').open = true;
+    if (fromError) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  $('helpLink').onclick = () => {
+    if ($('panel').style.display === 'none') return;
+    const box = $('locHelp');
+    if (box.style.display === 'block' && box.previousElementSibling === document.querySelector('.note')) box.style.display = 'none';
+    else showLocHelp(false);
+  };
+
+  // ---------- excused absences ----------
+  let lastStatus = null;
+  const DOW = ['sun','mon','tue','wed','thu','fri','sat'];
+  function isoOf(dt){ return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0'); }
+  let excDays = null;
+  const DAY_FULL = {sun:'Sunday',mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday',sat:'Saturday'};
+  function excDayOk(iso){ if (!iso || !excDays) return true; const [y,m,d] = iso.split('-').map(Number); return excDays.indexOf(DOW[new Date(y, m-1, d).getDay()]) !== -1; }
+  function checkExcDate(){
+    const iso = $('excDate').value;
+    // Any date is allowed (occasional extra practices), so just clear old messages.
+    if (iso) $('excMsg').innerHTML = '';
+  }
+  function fillExcDates(days, todayIso){
+    if (!days) return;
+    excDays = days.length ? days : null;
+    const inp = $('excDate'); todayIso = todayIso || isoOf(new Date());
+    if (!inp.value && days.length){
+      const [y,m,d] = todayIso.split('-').map(Number);
+      for (let i = 0; i < 7; i++){ const dt = new Date(y, m-1, d + i); if (days.indexOf(DOW[dt.getDay()]) !== -1){ inp.value = isoOf(dt); break; } }
+    }
+    checkExcDate();
+  }
+  $('excDate').addEventListener('change', checkExcDate);
+  function pill(status){ const s = el('span', 'pill ' + status.toLowerCase(), status); return s; }
+  // Status pill + a small × (like the carpool site) on the right of an item's top row.
+  function topRow(label, status, onDelete, ariaLabel){
+    const top = el('div', 'top'); top.appendChild(el('span', '', label));
+    const right = el('span', 'right'); right.appendChild(pill(status));
+    let x = null;
+    if (onDelete){ x = el('button', 'x-btn', '×'); x.type = 'button'; x.title = 'Delete'; x.setAttribute('aria-label', ariaLabel || 'Delete'); x.onclick = () => onDelete(x); right.appendChild(x); }
+    top.appendChild(right); top.x = x; return top;
+  }
+  function myExcItem(x){
+    const item = el('div', 'exc-item');
+    item.appendChild(topRow(fmtDay(x.date), x.status, b => {
+      if (!confirm('Delete your request for ' + fmtDay(x.date) + '?' + (x.status === 'Approved' ? ' The excused mark (E) for that practice will be removed too.' : ''))) return;
+      setBusy(b, true);
+      serverRun().withSuccessHandler(l => renderMyExcused(l)).withFailureHandler(e => { setBusy(b, false, '×'); showIn('excMsg', 'bad', errText(e), 'Error'); }).deleteExcused(x.id, false);
+    }, 'Delete request for ' + fmtDay(x.date)));
+    item.appendChild(el('div', 'why', x.reason));
+    if (x.note) item.appendChild(el('div', 'why', 'Note from admin: ' + x.note));
+    return item;
+  }
+  // "Pending requests" = waiting on an admin. "Past requests" = everything already approved or denied.
+  function renderMyExcused(list, focusDate){
+    const isPast = x => x.status !== 'Pending';
+    const cur = list.filter(x => !isPast(x)).sort((a, b) => a.date.localeCompare(b.date) || String(a.submitted).localeCompare(String(b.submitted)));
+    const past = list.filter(isPast).sort((a, b) => b.date.localeCompare(a.date));
+    $('excListLabel').textContent = 'Pending requests' + (cur.length ? ' · ' + cur.length : '');
+    if (focusDate){ const at = cur.findIndex(x => x.date === focusDate); if (at >= 0) carPos.excList = at; }
+    carousel('excList', cur, myExcItem, 'No pending requests.');
+    $('excPastLabel').textContent = past.length + (past.length === 1 ? ' past request' : ' past requests');
+    const box = $('excPast'); box.innerHTML = '';
+    if (!past.length) box.appendChild(el('div', 'empty', 'None yet.'));
+    past.forEach(x => box.appendChild(myExcItem(x)));
+  }
+  $('excAddBtn').onclick = () => {
+    const btn = $('excAddBtn'), who = $('excWho').value.trim(), date = $('excWhen').value, why = $('excWhy').value.trim();
+    if (!who){ showIn('excAddMsg', 'bad', 'Enter a uniqname or email.', "Couldn't add"); return; }
+    if (!date){ showIn('excAddMsg', 'bad', 'Pick the practice date.', "Couldn't add"); return; }
+    setBusy(btn, true); showIn('excAddMsg', '', '');
+    serverRun()
+      .withSuccessHandler(d => { setBusy(btn, false, 'Add Excused'); $('excWho').value = ''; $('excWhy').value = ''; renderAdmin(d);
+        showIn('excAddMsg', 'ok', who + ' is excused for ' + fmtDay(date) + '.', 'Added'); })
+      .withFailureHandler(e => { setBusy(btn, false, 'Add Excused'); showIn('excAddMsg', 'bad', errText(e), "Couldn't add"); })
+      .adminAddExcused(who, date, why);
+  };
+  $('excBox').addEventListener('toggle', () => {
+    if (!$('excBox').open) return;
+    const cached = lastStatus && lastStatus.practiceDays;
+    fillExcDates(cached && cached.length ? cached : null, lastStatus && lastStatus.todayISO);
+    serverRun().withSuccessHandler(p => fillExcDates(p.days, p.today))
+      .withFailureHandler(e => { fillExcDates(cached || [], lastStatus && lastStatus.todayISO); showIn('excMsg', 'bad', errText(e), 'Error'); }).getPracticeDays();
+    serverRun().withSuccessHandler(l => renderMyExcused(l))
+      .withFailureHandler(e => { $('excList').innerHTML = ''; showIn('excMsg', 'bad', errText(e), 'Error'); }).getMyExcused();
+  });
+  $('excSubmit').onclick = () => {
+    const btn = $('excSubmit'), date = $('excDate').value, reason = $('excReason').value.trim();
+    if (!date){ showIn('excMsg', 'bad', 'Pick a practice day.', "Couldn't submit"); return; }
+    if (!reason){ showIn('excMsg', 'bad', 'Add a short reason.', "Couldn't submit"); return; }
+    setBusy(btn, true); showIn('excMsg', '', '');
+    serverRun()
+      .withSuccessHandler(list => { setBusy(btn, false, 'Submit Request'); $('excReason').value = ''; renderMyExcused(list, date);
+        showIn('excMsg', 'ok', 'Request sent for ' + fmtDay(date) + '. An admin will review it.', 'Submitted'); })
+      .withFailureHandler(e => { setBusy(btn, false, 'Submit Request'); showIn('excMsg', 'bad', errText(e), "Couldn't submit"); })
+      .submitExcused(date, reason);
+  };
+
+  // One-at-a-time viewer with ‹ › arrows (and swipe on phones). Remembers its position across re-renders.
+  const carPos = {};
+  function carousel(boxId, items, buildItem, emptyText){
+    const box = $(boxId); box.innerHTML = '';
+    if (!items.length){ box.appendChild(el('div', 'empty', emptyText)); carPos[boxId] = 0; return; }
+    let i = Math.min(carPos[boxId] || 0, items.length - 1);
+    const slide = el('div', 'slide'), nav = el('div', 'car-nav');
+    const prev = el('button', 'car-btn', '‹'), next = el('button', 'car-btn', '›'), count = el('span', 'car-count');
+    prev.type = next.type = 'button'; prev.setAttribute('aria-label', 'Previous'); next.setAttribute('aria-label', 'Next');
+    const show = () => {
+      carPos[boxId] = i; slide.innerHTML = ''; slide.appendChild(buildItem(items[i]));
+      count.textContent = (i + 1) + ' of ' + items.length;
+      prev.disabled = i === 0; next.disabled = i === items.length - 1;
+    };
+    prev.onclick = () => { if (i > 0){ i--; show(); } };
+    next.onclick = () => { if (i < items.length - 1){ i++; show(); } };
+    let sx = null;
+    slide.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+    slide.addEventListener('touchend', e => { if (sx === null) return; const dx = e.changedTouches[0].clientX - sx; sx = null;
+      if (dx < -40) next.onclick(); else if (dx > 40) prev.onclick(); });
+    nav.appendChild(prev); nav.appendChild(count); nav.appendChild(next);
+    box.appendChild(slide); if (items.length > 1) box.appendChild(nav);
+    show();
+  }
+
+  // Admin side
+  function renderExcusedAdmin(x){
+    if (!x) return;
+    $('excPendingLabel').textContent = 'Pending · ' + x.pending.length;
+    carousel('excPending', x.pending, r => {
+      const item = el('div', 'exc-item');
+      const who = (r.name || r.email) + "'s request for " + fmtDay(r.date);
+      let ok, no;
+      item.appendChild(topRow((r.name || r.email) + ' · ' + fmtDay(r.date), 'Pending', del => {
+        if (!confirm('Delete ' + who + '? It will be removed without approving or denying it.')) return;
+        setBusy(del, true); ok.disabled = no.disabled = true;
+        serverRun().withSuccessHandler(renderAdmin)
+          .withFailureHandler(e => { setBusy(del, false, '×'); ok.disabled = no.disabled = false; showIn('excAdminMsg', 'bad', errText(e), 'Error'); })
+          .deleteExcused(r.id, true);
+      }, 'Delete ' + who));
+      item.appendChild(el('div', 'why', r.reason));
+      const a = el('div', 'actions');
+      ok = el('button', 'btn small', 'Approve'); no = el('button', 'btn small secondary', 'Deny');
+      ok.type = no.type = 'button';
+      const decide = (approve, btn, label) => {
+        const note = prompt((approve ? 'Approve ' : 'Deny ') + (r.name || r.email) + "'s request for " + fmtDay(r.date) + '?\nOptional note to them:', '');
+        if (note === null) return;
+        setBusy(btn, true); ok.disabled = no.disabled = true;
+        serverRun().withSuccessHandler(renderAdmin)
+          .withFailureHandler(e => { setBusy(btn, false, label); ok.disabled = no.disabled = false; showIn('excAdminMsg', 'bad', errText(e), 'Error'); })
+          .decideExcused(r.id, approve, note);
+      };
+      ok.onclick = () => decide(true, ok, 'Approve'); no.onclick = () => decide(false, no, 'Deny');
+      a.appendChild(ok); a.appendChild(no); item.appendChild(a);
+      return item;
+    }, 'No pending requests.');
+    $('excRecentLabel').textContent = x.recent.length + (x.recent.length === 1 ? ' past decision' : ' past decisions');
+    const rec = $('excRecent'); rec.innerHTML = '';
+    if (!x.recent.length) rec.appendChild(el('div', 'empty', 'None yet.'));
+    x.recent.forEach(r => {
+      const item = el('div', 'exc-item');
+      const who = (r.name || r.email) + "'s request for " + fmtDay(r.date);
+      let flip;
+      const top = topRow((r.name || r.email) + ' · ' + fmtDay(r.date), r.status, del => {
+        if (!confirm('Delete ' + who + '?' + (r.status === 'Approved' ? ' Their excused mark (E) for that practice will be removed too.' : ''))) return;
+        setBusy(del, true); flip.disabled = true;
+        serverRun().withSuccessHandler(renderAdmin).withFailureHandler(e => { setBusy(del, false, '×'); flip.disabled = false; showIn('excAdminMsg', 'bad', errText(e), 'Error'); }).deleteExcused(r.id, true);
+      }, 'Delete ' + who);
+      item.appendChild(top);
+      item.appendChild(el('div', 'why', r.reason));
+      // "Denied by rnakkash · note · Change to approved" on one line instead of a big button.
+      const line = el('div', 'why', r.status + (r.decidedBy ? ' by ' + r.decidedBy : '') + (r.note ? ' · "' + r.note + '"' : '') + ' · ');
+      const toApprove = r.status === 'Denied';
+      flip = el('button', 'help-link swap-link', toApprove ? 'Change to approved' : 'Change to denied'); flip.type = 'button';
+      flip.onclick = () => {
+        const note = prompt('Change ' + who + ' from ' + r.status.toLowerCase() + ' to ' + (toApprove ? 'approved' : 'denied') + '?\nOptional note to them:', '');
+        if (note === null) return;
+        const label = flip.textContent; setBusy(flip, true, 'Changing'); top.x.disabled = true;
+        serverRun().withSuccessHandler(renderAdmin)
+          .withFailureHandler(e => { setBusy(flip, false, label); top.x.disabled = false; showIn('excAdminMsg', 'bad', errText(e), 'Error'); })
+          .changeExcusedDecision(r.id, toApprove, note);
+      };
+      line.appendChild(flip); item.appendChild(line);
+      rec.appendChild(item);
+    });
+    $('excMailPerson').checked = !!x.settings.emailPerson;
+    $('excMailAdmins').checked = !!x.settings.emailAdmins;
+  }
+  [['excMailPerson', 'person'], ['excMailAdmins', 'admins']].forEach(([id, which]) => {
+    $(id).onchange = () => {
+      const box = $(id); box.disabled = true;
+      serverRun().withSuccessHandler(d => { box.disabled = false; renderAdmin(d); showIn('excAdminMsg', 'ok', 'Email setting saved.', 'Saved'); })
+        .withFailureHandler(e => { box.disabled = false; box.checked = !box.checked; showIn('excAdminMsg', 'bad', errText(e), 'Error'); })
+        .setExcusedEmail(which, box.checked);
+    };
+  });
+
+  // Check my attendance (only the signed-in person's own record)
+  function fmtDayLong(iso){ const [y,m,dd] = iso.split('-').map(Number); return new Date(y, m-1, dd).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}); }
+  function renderMyAttendance(r){
+    const body = $('myAttBody'); body.innerHTML = '';
+    const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    if (!r.practices.length){ body.appendChild(mk('div', 'empty', 'No practices recorded yet.')); return; }
+    const pct = r.total ? r.attended / r.total : 0;
+    const tier = !r.total ? '' : pct >= 2/3 ? 'green' : pct >= 1/2 ? 'yellow' : 'red';
+    const stat = mk('div', 'att-stat');
+    stat.appendChild(mk('span', 'big' + (tier ? ' t-' + tier : ''), r.total ? Math.round(pct * 100) + '%' : '—'));
+    stat.appendChild(mk('span', 'of', r.attended + ' of ' + r.total + (r.total === 1 ? ' practice' : ' practices')));
+    body.appendChild(stat);
+    const bar = mk('div', 'att-bar'); const fill = mk('span', tier ? 'bg-' + tier : ''); fill.style.width = Math.round(pct * 100) + '%'; bar.appendChild(fill); body.appendChild(bar);
+    if (tier) body.appendChild(mk('div', 'att-tier t-' + tier, tier === 'green' ? 'On track · 2/3 or more' : tier === 'yellow' ? 'Getting there · half or more' : 'Below half'));
+    r.practices.forEach(p => {
+      const row = mk('div', 'att-row');
+      row.appendChild(mk('span', '', fmtDayLong(p.date)));
+      row.appendChild(p.pending ? mk('span', 'st', 'Today · not yet') : p.excused ? mk('span', 'st t-blue', 'E · Excused') : p.attended ? mk('span', 'st t-green', '✓ Attended') : mk('span', 'st t-red', '✗ Missed'));
+      body.appendChild(row);
+    });
+  }
+  $('myAtt').addEventListener('toggle', () => {
+    if (!$('myAtt').open) return;
+    serverRun().withSuccessHandler(renderMyAttendance)
+      .withFailureHandler(e => { $('myAttBody').innerHTML = ''; const d = document.createElement('div'); d.className = 'empty'; d.textContent = errText(e); $('myAttBody').appendChild(d); })
+      .getMyAttendance();
+  });
+
+  $('signOutBtn').onclick = () => {
+    saveSession(null);
+    try { google.accounts.id.disableAutoSelect(); } catch (e) {}
+    location.reload();
+  };
+  if (IN_APPS_SCRIPT) load();
+  else {
+    const g = document.createElement('script'); g.src = 'https://accounts.google.com/gsi/client'; g.async = true; document.head.appendChild(g);
+    session = loadSession(); if (session) startApp(); else showSignIn();
+  }
+</script>
+</body>
+</html>
