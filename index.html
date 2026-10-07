@@ -42,7 +42,6 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
 .signin p{color:var(--text-dim);font-size:14px;margin:0 0 20px;}
 .signin #gsiBtn{display:inline-block;min-height:44px;}
 .signin .fine{color:var(--text-dim);font-size:12px;margin-top:16px;}
-.admin-row .owner-toggle{margin-left:auto;margin-right:6px;}
 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;}
 .panel.checked{border-color:var(--green);}
@@ -374,7 +373,7 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
 
     <div class="admin-card" id="adminsSection" style="display:none">
       <h3>Admin — manage access</h3>
-      <div class="sub">Admins can check anyone in and handle excused absences. Owners can also manage access, the gym location and emails. Hand the team off by making next year's officers owners.</div>
+      <div class="sub">Admins can do everything on this page. Add teammates by their uniqname or umich.edu email. To hand the team off, add next year's officers here.</div>
       <details class="drop" id="adminsBox">
         <summary id="adminsLabel">Admins</summary>
         <div class="drop-body" id="adminList"></div>
@@ -615,13 +614,7 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
       if (!n) al.appendChild(el('div', 'empty', 'No one listed yet.'));
       d.admins.forEach(a => {
         const row = el('div', 'admin-row'); row.appendChild(el('span', '', a.email + (a.email === d.me ? ' (you)' : '')));
-        if (a.owner) row.appendChild(el('span', 'meta', 'owner'));
-        const t = el('button', 'help-link owner-toggle', a.owner ? 'Remove owner' : 'Make owner'); t.type = 'button';
-        t.onclick = () => { if (!confirm((a.owner ? 'Make ' + a.email + ' a regular admin?' : 'Make ' + a.email + ' an owner? Owners can manage admins, the gym location and emails.'))) return;
-          setBusy(t, true);
-          serverRun().withSuccessHandler(renderAdmin)
-            .withFailureHandler(e => { setBusy(t, false, a.owner ? 'Remove owner' : 'Make owner'); showIn('adminsMsg', 'bad', errText(e), 'Error'); }).setOwner(a.email, !a.owner); };
-        row.appendChild(t);
+        if (a.email === d.me){ al.appendChild(row); return; }   // can't remove yourself
         const x = el('button', 'x-btn', '×'); x.setAttribute('aria-label', 'Remove admin ' + a.email);
         x.onclick = () => { if (!confirm('Remove ' + a.email + ' as an admin?')) return;
           setBusy(x, true);
