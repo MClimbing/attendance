@@ -532,7 +532,7 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
     $('dateLine').textContent = longDate(s);
     const guest = !s.onRoster && !!s.openCheckin;   // tryouts: not on the roster but open check-in is on
     if (!s.onRoster && !s.isAdmin && !guest){ showAccessBlocked(s); return; }
-    $('tryoutName').style.display = guest && !s.checkedInAt ? 'block' : 'none';
+    $('tryoutName').style.display = guest && !s.checkedInAt && !s.knownName ? 'block' : 'none';   // only ask if we don't know their name yet
     lastStatus = s;
     $('myAtt').style.display = 'block'; $('excBox').style.display = s.onRoster || s.isAdmin ? 'block' : 'none';
     $('loading').style.display = 'none'; $('body').style.display = 'block';
