@@ -178,8 +178,9 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
 .mini-label{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;margin:0 0 6px;}
 .link{color:var(--blue);font-size:12px;text-decoration:underline;}
 /* practice day picker = carpool .week-grid / .week-cell */
-.day-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
-.day-tile{position:relative;flex:1 1 0;min-width:56px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 4px 7px;text-align:center;cursor:pointer;color:var(--text);font-family:'Inter',sans-serif;}
+.day-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:4px;}
+@media (max-width:500px){ .day-grid{gap:4px;} .day-grid .day-tile{padding:8px 1px 7px;} .day-grid .day-tile .dt{font-size:10px;} .day-grid .day-tile .off-x{right:2px;} }
+.day-tile{position:relative;flex:1 1 0;min-width:0;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 4px 7px;text-align:center;cursor:pointer;color:var(--text);font-family:'Inter',sans-serif;}
 .day-tile:hover{border-color:var(--blue);}
 .day-tile.on{border-color:var(--maize);background:var(--maize-dim);}
 .day-tile.on:hover{border-color:var(--maize);}
