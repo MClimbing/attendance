@@ -359,10 +359,10 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
     </div>
 
     <div class="admin-card">
-      <h3>Admin — roster</h3>
-      <div class="sub" id="openStatus">🔒 Roster only — only people on the roster below can check in.</div>
-      <div class="row" style="margin:4px 0 14px"><button class="btn small secondary" id="openCheckinBtn" type="button">Open check-in for tryouts</button></div>
-      <div class="card-note" style="margin:0 0 8px">People on the roster (add by uniqname or umich.edu email, or paste several separated by commas; names come from the UMich directory):</div>
+      <h3>Admin — restricted roster</h3>
+      <div class="sub" id="openStatus">🔒 Restricted — only admins and the people listed below can check in.</div>
+      <div class="row" style="margin:4px 0 14px"><button class="btn small secondary" id="openCheckinBtn" type="button">Turn off restricted mode</button></div>
+      <div class="card-note" style="margin:0 0 8px">People allowed to check in while restricted mode is on (admins can always check in):</div>
       <details class="drop" id="rosterBox">
         <summary id="rosterLabel">Roster</summary>
         <div class="drop-body" id="rosterRows"></div>
@@ -530,7 +530,7 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
   }
   function render(s){
     $('dateLine').textContent = longDate(s);
-    const guest = !s.onRoster && !!s.openCheckin;   // tryouts: not on the roster but open check-in is on
+    const guest = !s.onRoster && (!!s.openCheckin || !!s.isAdmin);   // not on the list, but restricted mode is off (or they're an admin)
     if (!s.onRoster && !s.isAdmin && !guest){ showAccessBlocked(s); return; }
     $('tryoutName').style.display = guest && !s.checkedInAt && !s.knownName ? 'block' : 'none';   // only ask if we don't know their name yet
     lastStatus = s;
@@ -735,19 +735,20 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
   let openOn = false;
   $('openCheckinBtn').onclick = () => {
     const btn = $('openCheckinBtn'), on = !openOn, label = btn.textContent;
-    if (!confirm(on ? 'Open check-in to anyone with a umich.edu account (tryouts)?' : 'Go back to roster-only check-in?')) return;
+    if (!confirm(on ? 'Turn off restricted mode? Anyone with a umich.edu account will be able to check in.' : 'Turn on restricted mode? Only admins and the people on the list will be able to check in.')) return;
     setBusy(btn, true);
-    serverRun().withSuccessHandler(d => { setBusy(btn, false, label); renderAdmin(d); showIn('rosterMsg', 'ok', on ? 'Anyone with a umich.edu account can check in now. Turn this off after tryouts.' : 'Back to roster-only check-in.', 'Saved'); })
+    serverRun().withSuccessHandler(d => { setBusy(btn, false, label); renderAdmin(d); showIn('rosterMsg', 'ok', on ? 'Restricted mode is off. Anyone with a umich.edu account can check in.' : 'Restricted mode is on. Only admins and the people on the list can check in.', 'Saved'); })
       .withFailureHandler(e => { setBusy(btn, false, label); showIn('rosterMsg', 'bad', errText(e), 'Error'); }).setOpenCheckin(on);
   };
   function renderRoster(d){
     openOn = !!d.openCheckin;
-    $('openStatus').textContent = openOn
-      ? '🔓 Open for tryouts — anyone with a umich.edu account can check in (they type their name). Turn this off once tryouts are over.'
-      : '🔒 Roster only — only people on the roster below can check in. Open it up during tryouts so anyone with a umich.edu account can check in.';
-    $('openCheckinBtn').textContent = openOn ? 'Turn off open check-in' : 'Open check-in for tryouts';
+    $('openStatus').textContent = (openOn
+      ? '🔓 Off — anyone with a umich.edu account can check in (they type their name).'
+      : '🔒 Restricted — only admins and the people listed below can check in.')
+      + ' Use this once the roster is finalized to stop everyone else from checking in, while still letting a specific list of people (e.g. late additions) check in.';
+    $('openCheckinBtn').textContent = openOn ? 'Turn on restricted mode' : 'Turn off restricted mode';
     const n = d.roster.length;
-    $('rosterLabel').textContent = n + (n === 1 ? ' person' : ' people') + ' on the roster';
+    $('rosterLabel').textContent = n + (n === 1 ? ' person' : ' people') + ' on the list';
     const box = $('rosterRows'); box.innerHTML = '';
     if (!n) box.appendChild(el('div', 'empty', 'No one yet.'));
     d.roster.forEach(r => {
