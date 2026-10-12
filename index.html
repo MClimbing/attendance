@@ -1088,14 +1088,14 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     const tier = !r.total ? '' : pct >= 2/3 ? 'green' : pct >= 1/2 ? 'yellow' : 'red';
     const stat = mk('div', 'att-stat');
     stat.appendChild(mk('span', 'big' + (tier ? ' t-' + tier : ''), r.total ? Math.round(pct * 100) + '%' : '—'));
-    stat.appendChild(mk('span', 'of', r.attended + ' of ' + r.total + (r.total === 1 ? ' practice' : ' practices')));
+    stat.appendChild(mk('span', 'of', r.attended + ' of ' + r.total + (r.total === 1 ? ' practice' : ' practices') + ' · ' + (r.total ? Math.round((r.excused || 0) / r.total * 100) : 0) + '% excused'));
     body.appendChild(stat);
     const bar = mk('div', 'att-bar'); const fill = mk('span', tier ? 'bg-' + tier : ''); fill.style.width = Math.round(pct * 100) + '%'; bar.appendChild(fill); body.appendChild(bar);
     if (tier) body.appendChild(mk('div', 'att-tier t-' + tier, tier === 'green' ? 'On track · 2/3 or more' : tier === 'yellow' ? 'Getting there · half or more' : 'Below half'));
     r.practices.forEach(p => {
       const row = mk('div', 'att-row');
       row.appendChild(mk('span', '', fmtDayLong(p.date)));
-      row.appendChild(p.pending ? mk('span', 'st', 'Today · not yet') : p.excused ? mk('span', 'st t-blue', 'E · Excused') : p.attended ? mk('span', 'st t-green', '✓ Attended') : mk('span', 'st t-red', '✗ Missed'));
+      row.appendChild(p.pending ? mk('span', 'st', 'Today · not yet') : p.excused ? mk('span', 'st t-yellow', 'E Excused') : p.attended ? mk('span', 'st t-green', '✓ Attended') : mk('span', 'st t-red', '✗ Missed'));
       body.appendChild(row);
     });
   }
