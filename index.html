@@ -102,9 +102,10 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
 .att-stat{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}
 .att-stat .big{font-size:30px;font-weight:700;letter-spacing:-0.02em;}
 .att-stat .of{color:var(--text-dim);font-size:14px;}
-.att-bar{height:6px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;margin:4px 0 6px;}
+.att-bar{height:6px;margin:4px 0 6px;}
 .att-bar{display:flex;gap:3px;}
 .att-bar > span{display:block;height:100%;flex:0 1 auto;border-radius:3px;}
+.att-bar > .bg-rest{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);}
 .att-tier{font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
 .t-green{color:var(--green);} .bg-green{background:var(--green);}
 .t-yellow{color:var(--maize);} .bg-yellow{background:var(--maize);}
@@ -1094,7 +1095,7 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     const bar = mk('div', 'att-bar');
     const exc = r.excused || 0, here = r.attended - exc;   // green = checked in, yellow = excused
     const seg = (cls, n) => { if (!n || !r.total) return; const sp = mk('span', cls); sp.style.width = (n / r.total * 100) + '%'; bar.appendChild(sp); };
-    seg('bg-green', here); seg('bg-yellow', exc); body.appendChild(bar);
+    seg('bg-green', here); seg('bg-yellow', exc); seg('bg-rest', r.total - r.attended); body.appendChild(bar);
     if (tier) body.appendChild(mk('div', 'att-tier t-' + tier, tier === 'green' ? 'On track · 2/3 or more' : tier === 'yellow' ? 'Getting there · half or more' : 'Below half'));
     r.practices.forEach(p => {
       const row = mk('div', 'att-row');
