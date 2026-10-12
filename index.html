@@ -103,7 +103,8 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
 .att-stat .big{font-size:30px;font-weight:700;letter-spacing:-0.02em;}
 .att-stat .of{color:var(--text-dim);font-size:14px;}
 .att-bar{height:6px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;margin:4px 0 6px;}
-.att-bar > span{display:block;height:100%;}
+.att-bar{display:flex;}
+.att-bar > span{display:block;height:100%;flex:0 0 auto;}
 .att-tier{font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
 .t-green{color:var(--green);} .bg-green{background:var(--green);}
 .t-yellow{color:var(--maize);} .bg-yellow{background:var(--maize);}
@@ -1090,7 +1091,10 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     stat.appendChild(mk('span', 'big' + (tier ? ' t-' + tier : ''), r.total ? Math.round(pct * 100) + '%' : '—'));
     stat.appendChild(mk('span', 'of', r.attended + ' of ' + r.total + (r.total === 1 ? ' practice' : ' practices') + ' · ' + (r.total ? Math.round((r.excused || 0) / r.total * 100) : 0) + '% excused'));
     body.appendChild(stat);
-    const bar = mk('div', 'att-bar'); const fill = mk('span', tier ? 'bg-' + tier : ''); fill.style.width = Math.round(pct * 100) + '%'; bar.appendChild(fill); body.appendChild(bar);
+    const bar = mk('div', 'att-bar');
+    const exc = r.excused || 0, here = r.attended - exc;   // green = checked in, yellow = excused
+    const seg = (cls, n) => { if (!n || !r.total) return; const sp = mk('span', cls); sp.style.width = (n / r.total * 100) + '%'; bar.appendChild(sp); };
+    seg('bg-green', here); seg('bg-yellow', exc); body.appendChild(bar);
     if (tier) body.appendChild(mk('div', 'att-tier t-' + tier, tier === 'green' ? 'On track · 2/3 or more' : tier === 'yellow' ? 'Getting there · half or more' : 'Below half'));
     r.practices.forEach(p => {
       const row = mk('div', 'att-row');
