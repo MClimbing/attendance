@@ -8,8 +8,10 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#041c35">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root{
   --bg:#041c35;
@@ -455,7 +457,16 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     try { const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); if (s && s.exp > Date.now()) return s; } catch (e) {}
     return null;
   }
-  function saveSession(s){ session = s; try { if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s)); else localStorage.removeItem(SESSION_KEY); } catch (e) {} }
+  function saveSession(s){ session = s; try { if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s)); else { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(CACHE_KEY); } } catch (e) {} }
+  // Last thing the server sent, so a return visit shows the page immediately and refreshes it in the background.
+  const CACHE_KEY = 'mca_cache';
+  function readCache(){
+    try { const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); return c && session && c.email === session.email ? c : null; } catch (e) { return null; }
+  }
+  function writeCache(part, v){
+    if (!session || !session.email) return;
+    try { const c = readCache() || { email: session.email }; c[part] = v; localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch (e) {}
+  }
   async function callApi(fn, args, extra){
     const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(Object.assign({ fn: fn, args: args, session: session && session.session }, extra || {})) });
@@ -497,6 +508,13 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     $('signin').style.display = 'none'; $('panel').style.display = '';
     document.querySelectorAll('.note').forEach(n => n.style.display = '');
     if (!IN_APPS_SCRIPT) $('signOutBtn').style.display = 'inline';
+    const c = readCache();
+    if (c && c.status && c.status.todayISO === todayISO()) {
+      render(c.status, true);                       // instant: last known page, button waits for the fresh check
+      if (c.admin && adminLoaded) { try { renderAdmin(c.admin); } catch (e) {} }
+    } else if (c && c.status && c.status.isAdmin && !adminLoaded) {
+      adminLoaded = true; $('adminPanel').style.display = 'block'; $('adminDivider').style.display = 'flex'; loadAdmin();
+    }
     load();
   }
 
@@ -528,7 +546,7 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     $('dot').className = 'dot' + (dotClass ? ' ' + dotClass : '');
     $('status').textContent = status; $('detail').textContent = detail;
     $('btn').classList.remove('busy'); $('btn').removeAttribute('aria-busy');
-    $('btn').disabled = !btnEnabled; $('btn').textContent = btnText || 'Check In';
+    $('btn').disabled = !btnEnabled; $('btn').textContent = btnText || 'Check In'; $('btn').style.minWidth = '';
     $('panel').classList.toggle('checked', dotClass === 'done');
   }
 
@@ -545,7 +563,8 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     const [y,m,d] = s.todayISO.split('-').map(Number);
     return new Date(y, m-1, d).toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
   }
-  function render(s){
+  function render(s, cached){
+    if (!cached) writeCache('status', s);
     $('dateLine').textContent = longDate(s);
     const guest = !s.onRoster && (!!s.openCheckin || !!s.isAdmin);   // not on the list, but restricted mode is off (or they're an admin)
     if (!s.onRoster && !s.isAdmin && !guest){ showAccessBlocked(s); return; }
@@ -573,6 +592,9 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     } else {
       setState('', "Check-In Isn't Open", s.message, false);
     }
+    if (cached) setBusy($('btn'), true);            // saved copy: wait for the live status before allowing a check-in
+    if (s.myAttendance && $('myAtt').open) renderMyAttendance(s.myAttendance);
+    if (s.myExcused && $('excBox').open) renderMyExcused(s.myExcused);
   }
 
   function load(){
@@ -611,7 +633,7 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
   function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
   function loadAdmin(){
-    serverRun().withSuccessHandler(renderAdmin)
+    serverRun().withSuccessHandler(d => { writeCache('admin', d); renderAdmin(d); })
       .withFailureHandler(e => { $('todayList').innerHTML = ''; showIn('adminMsg', 'bad', errText(e), 'Admin error'); })
       .getAdminData();
   }
@@ -940,6 +962,7 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
   }
   // "Pending requests" = waiting on an admin. "Past requests" = everything already approved or denied.
   function renderMyExcused(list, focusDate){
+    if (lastStatus) lastStatus.myExcused = list;   // keep the saved copy current after submit/cancel/delete
     const isPast = x => x.status !== 'Pending';
     const cur = list.filter(x => !isPast(x)).sort((a, b) => a.date.localeCompare(b.date) || String(a.submitted).localeCompare(String(b.submitted)));
     const past = list.filter(isPast).sort((a, b) => b.date.localeCompare(a.date));
@@ -966,8 +989,10 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     if (!$('excBox').open) return;
     const cached = lastStatus && lastStatus.practiceDays;
     fillExcDates(cached && cached.length ? cached : null, lastStatus && lastStatus.todayISO);
-    serverRun().withSuccessHandler(p => fillExcDates(p.days, p.today))
+    if (lastStatus && lastStatus.myExcused){ renderMyExcused(lastStatus.myExcused); if (cached && cached.length) return; }
+    if (!(cached && cached.length)) serverRun().withSuccessHandler(p => fillExcDates(p.days, p.today))
       .withFailureHandler(e => { fillExcDates(cached || [], lastStatus && lastStatus.todayISO); showIn('excMsg', 'bad', errText(e), 'Error'); }).getPracticeDays();
+    if (lastStatus && lastStatus.myExcused) return;
     serverRun().withSuccessHandler(l => renderMyExcused(l))
       .withFailureHandler(e => { $('excList').innerHTML = ''; showIn('excMsg', 'bad', errText(e), 'Error'); }).getMyExcused();
   });
@@ -1106,6 +1131,7 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
   }
   $('myAtt').addEventListener('toggle', () => {
     if (!$('myAtt').open) return;
+    if (lastStatus && lastStatus.myAttendance){ renderMyAttendance(lastStatus.myAttendance); return; }   // already here, no trip needed
     // Fresh dots each time: iPhone Safari doesn't start animations that were inside a closed dropdown.
     $('myAttBody').innerHTML = '<div class="loading">loading<span class="loading-dots"><span></span><span></span><span></span></span></div>';
     serverRun().withSuccessHandler(renderMyAttendance)
