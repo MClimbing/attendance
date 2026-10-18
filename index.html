@@ -295,7 +295,7 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
   <details class="my-att exc-drop" id="excBox" style="display:none">
     <summary>Request an excused absence</summary>
     <div class="att-body exc-card">
-    <div class="sub">Pick the practice you'll miss (or missed) and say why. An admin will approve or deny it; approved absences count toward your attendance.</div>
+    <div class="sub" id="excIntro">Pick the practice you'll miss (or missed) and say why. An admin will approve or deny it; approved absences count toward your attendance.</div>
     <input type="date" class="input" id="excDate" aria-label="Practice day">
     <textarea class="input" id="excReason" maxlength="500" placeholder="Reason (e.g. exam, sick, etc)" aria-label="Reason"></textarea>
     <div class="row" style="margin-top:8px"><button class="btn small" id="excSubmit">Submit Request</button></div>
@@ -361,6 +361,7 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
         </div>
       </details>
       <hr class="exc-rule">
+      <label class="toggle-row"><input type="checkbox" id="excAllowPast"> Allow requests for past practices</label>
       <label class="toggle-row"><input type="checkbox" id="excMailPerson"> Email the person when their request is approved or denied</label>
       <label class="toggle-row"><input type="checkbox" id="excMailAdmins"> Email admins when a new request comes in</label>
       <div id="excAdminMsg"></div>
@@ -595,6 +596,7 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     if (cached) setBusy($('btn'), true);            // saved copy: wait for the live status before allowing a check-in
     if (s.myAttendance && $('myAtt').open) renderMyAttendance(s.myAttendance);
     if (s.myExcused && $('excBox').open) renderMyExcused(s.myExcused);
+    applyExcPast();
   }
 
   function load(){
@@ -940,6 +942,16 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     checkExcDate();
   }
   $('excDate').addEventListener('change', checkExcDate);
+  // Admins can turn off requests for practices that already happened.
+  function applyExcPast(){
+    const allow = !lastStatus || lastStatus.allowPastExcused !== false;
+    const today = (lastStatus && lastStatus.todayISO) || isoOf(new Date());
+    const inp = $('excDate');
+    inp.min = allow ? '' : today;
+    if (!allow && inp.value && inp.value < today){ inp.value = ''; fillExcDates(excDays || (lastStatus && lastStatus.practiceDays) || [], today); }
+    $('excIntro').textContent = (allow ? "Pick the practice you'll miss (or missed) and say why." : "Pick the practice you'll miss and say why.") +
+      ' An admin will approve or deny it; approved absences count toward your attendance.';
+  }
   function pill(status){ const s = el('span', 'pill ' + status.toLowerCase(), status); return s; }
   // Status pill + a small × (like the carpool site) on the right of an item's top row.
   function topRow(label, status, onDelete, ariaLabel){
@@ -1095,11 +1107,13 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     });
     $('excMailPerson').checked = !!x.settings.emailPerson;
     $('excMailAdmins').checked = !!x.settings.emailAdmins;
+    $('excAllowPast').checked = x.settings.allowPast !== false;
+    if (lastStatus && lastStatus.allowPastExcused !== (x.settings.allowPast !== false)){ lastStatus.allowPastExcused = x.settings.allowPast !== false; applyExcPast(); }
   }
-  [['excMailPerson', 'person'], ['excMailAdmins', 'admins']].forEach(([id, which]) => {
+  [['excAllowPast', 'past'], ['excMailPerson', 'person'], ['excMailAdmins', 'admins']].forEach(([id, which]) => {
     $(id).onchange = () => {
       const box = $(id); box.disabled = true;
-      serverRun().withSuccessHandler(d => { box.disabled = false; renderAdmin(d); showIn('excAdminMsg', 'ok', 'Email setting saved.', 'Saved'); })
+      serverRun().withSuccessHandler(d => { box.disabled = false; renderAdmin(d); showIn('excAdminMsg', 'ok', which === 'past' ? (box.checked ? 'People can now request past practices.' : 'Requests are now limited to today and future practices.') : 'Email setting saved.', 'Saved'); })
         .withFailureHandler(e => { box.disabled = false; box.checked = !box.checked; showIn('excAdminMsg', 'bad', errText(e), 'Error'); })
         .setExcusedEmail(which, box.checked);
     };
