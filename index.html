@@ -114,6 +114,11 @@ h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em;}
 .t-red{color:var(--red);} .bg-red{background:var(--red);}
 .att-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
 .att-row:last-child{border-bottom:none;}
+.att-row.opt{opacity:.55;}
+.att-row .st.t-dim{color:var(--text-dim);}
+.opt-list{margin-top:10px;}
+.opt-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
+.opt-item:last-child{border-bottom:none;}
 .att-row .st{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
 .exc-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-top:14px;text-align:left;}
 .exc-drop{margin-top:10px;}
@@ -351,8 +356,12 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
         <div class="drop-body exc-add">
           <div class="row">
             <input class="input grow" id="excWho" list="rosterList" placeholder="uniqname or teammate@umich.edu" autocomplete="off" aria-label="Email or uniqname">
-            <input class="input date" id="excWhen" type="date" aria-label="Practice date">
           </div>
+          <div class="row" style="margin-top:8px;align-items:flex-end">
+            <div><label class="mini-label" for="excWhen">Date</label><input class="input date" id="excWhen" type="date"></div>
+            <div><label class="mini-label" for="excWhenEnd">Through (optional)</label><input class="input date" id="excWhenEnd" type="date"></div>
+          </div>
+          <div class="sub" style="margin:6px 0 0">Add a "through" date to excuse every scheduled practice in that range, e.g. for an injury.</div>
           <div class="row" style="margin-top:8px">
             <input class="input grow" id="excWhy" maxlength="500" placeholder="Note (optional)" aria-label="Note">
             <button class="btn small" id="excAddBtn">Add Excused</button>
@@ -430,6 +439,17 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
       </div>
       <div style="margin-top:10px"><a class="link" id="locMap" href="#" target="_blank" rel="noopener">Check the pin on Google Maps</a></div>
       <div id="locMsg"></div>
+    </div>
+
+    <div class="admin-card">
+      <h3>Admin — optional practices</h3>
+      <div class="sub">Optional practices don't count toward anyone's attendance. Check-ins still work, so you can see who came.</div>
+      <div class="row">
+        <input class="input date" id="optDate" type="date" aria-label="Practice date">
+        <button class="btn small" id="optAddBtn">Mark Optional</button>
+      </div>
+      <div class="opt-list" id="optList"></div>
+      <div id="optMsg"></div>
     </div>
 
     <div class="admin-card">
@@ -651,7 +671,7 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     if (!d.today.length) tl.appendChild(el('div', 'empty', 'No one yet.'));
     d.today.slice().reverse().forEach(r => tl.appendChild(checkinRow(r, d.todayLabel, 'adminMsg')));
 
-    renderPast(d); renderSchedule(d); renderRoster(d); renderLocation(d); renderExcusedAdmin(d.excused);
+    renderPast(d); renderSchedule(d); renderRoster(d); renderLocation(d); renderExcusedAdmin(d.excused); renderOptional(d);
 
     $('adminsSection').style.display = d.isOwner ? 'block' : 'none';
     if (d.isOwner){
@@ -707,12 +727,38 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     return row;
   }
 
+  // Optional practices: never count toward attendance
+  function renderOptional(d){
+    const box = $('optList'); box.innerHTML = '';
+    const list = (d.optionalDays || []).slice().sort().reverse();
+    if (!list.length){ box.appendChild(el('div', 'empty', 'No optional practices.')); return; }
+    list.forEach(date => {
+      const row = el('div', 'opt-item');
+      row.appendChild(el('span', '', fmtDay(date) + (date === d.todayLabel ? ' (today)' : '')));
+      const x = el('button', 'x-btn', '×'); x.setAttribute('aria-label', 'Make ' + fmtDay(date) + ' count again');
+      x.onclick = () => {
+        x.disabled = true; x.classList.add('busy');
+        run('setOptionalDay', [date, false], dd => { renderAdmin(dd); showIn('optMsg', 'ok', fmtDay(date) + ' counts toward attendance again.', 'Saved'); },
+          e => { x.disabled = false; x.classList.remove('busy'); showIn('optMsg', 'bad', errText(e), 'Error'); });
+      };
+      row.appendChild(x); box.appendChild(row);
+    });
+  }
+  $('optAddBtn').onclick = () => {
+    const date = $('optDate').value, btn = $('optAddBtn');
+    if (!date){ showIn('optMsg', 'bad', 'Pick a date.', "Couldn't save"); return; }
+    setBusy(btn, true);
+    run('setOptionalDay', [date, true], d => { setBusy(btn, false, 'Mark Optional'); $('optDate').value = ''; renderAdmin(d);
+      showIn('optMsg', 'ok', fmtDay(date) + " is optional. It won't count toward anyone's attendance.", 'Saved'); },
+      e => { setBusy(btn, false, 'Mark Optional'); showIn('optMsg', 'bad', errText(e), "Couldn't save"); });
+  };
+
   // Past practices
   function renderPast(d){
     const sel = $('pastPick'), keep = sel.value; sel.innerHTML = '';
     if (!d.practices.length){ const o = el('option', '', 'No practices yet'); o.value = ''; sel.appendChild(o); $('pastBtn').disabled = true; return; }
     $('pastBtn').disabled = false;
-    d.practices.forEach(p => { const o = el('option', '', fmtDay(p.date) + (p.date === d.todayLabel ? ' (today)' : '') + ' · ' + p.count + (p.count === 1 ? ' person' : ' people')); o.value = p.date; sel.appendChild(o); });
+    d.practices.forEach(p => { const o = el('option', '', fmtDay(p.date) + (p.date === d.todayLabel ? ' (today)' : '') + (p.optional ? ' (optional)' : '') + ' · ' + p.count + (p.count === 1 ? ' person' : ' people')); o.value = p.date; sel.appendChild(o); });
     if (keep && d.practices.some(p => p.date === keep)) sel.value = keep;
   }
   $('pastBtn').onclick = () => {
@@ -987,15 +1033,20 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     past.forEach(x => box.appendChild(myExcItem(x)));
   }
   $('excAddBtn').onclick = () => {
-    const btn = $('excAddBtn'), who = $('excWho').value.trim(), date = $('excWhen').value, why = $('excWhy').value.trim();
+    const btn = $('excAddBtn'), who = $('excWho').value.trim(), date = $('excWhen').value, end = $('excWhenEnd').value, why = $('excWhy').value.trim();
     if (!who){ showIn('excAddMsg', 'bad', 'Enter a uniqname or email.', "Couldn't add"); return; }
     if (!date){ showIn('excAddMsg', 'bad', 'Pick the practice date.', "Couldn't add"); return; }
+    if (end && end < date){ showIn('excAddMsg', 'bad', 'The "through" date is before the start date.', "Couldn't add"); return; }
     setBusy(btn, true); showIn('excAddMsg', '', '');
     serverRun()
-      .withSuccessHandler(d => { setBusy(btn, false, 'Add Excused'); $('excWho').value = ''; $('excWhy').value = ''; renderAdmin(d);
-        showIn('excAddMsg', 'ok', who + ' is excused for ' + fmtDay(date) + '.', 'Added'); })
+      .withSuccessHandler(d => { setBusy(btn, false, 'Add Excused'); $('excWho').value = ''; $('excWhy').value = ''; $('excWhenEnd').value = ''; renderAdmin(d);
+        const b = d.bulk || { added: [date], skipped: [] };
+        let msg = b.added.length === 1 ? who + ' is excused for ' + fmtDay(b.added[0]) + '.'
+          : who + ' is excused for ' + b.added.length + ' practices (' + fmtDay(b.added[0]) + ' – ' + fmtDay(b.added[b.added.length - 1]) + ').';
+        if (b.skipped.length) msg += ' Skipped ' + b.skipped.map(x => fmtDay(x.date) + ' (' + x.why + ')').join(', ') + '.';
+        showIn('excAddMsg', 'ok', msg, 'Added'); })
       .withFailureHandler(e => { setBusy(btn, false, 'Add Excused'); showIn('excAddMsg', 'bad', errText(e), "Couldn't add"); })
-      .adminAddExcused(who, date, why);
+      .adminAddExcused(who, date, why, end && end !== date ? end : '');
   };
   $('excBox').addEventListener('toggle', () => {
     if (!$('excBox').open) return;
@@ -1137,8 +1188,9 @@ input[type=date].input::-webkit-date-and-time-value{text-align:left;}
     seg('bg-green', here); seg('bg-yellow', exc); seg('bg-rest', r.total - r.attended); body.appendChild(bar);
     if (tier) body.appendChild(mk('div', 'att-tier t-' + tier, tier === 'green' ? 'On track · 2/3 or more' : tier === 'yellow' ? 'Getting there · half or more' : 'Below half'));
     r.practices.forEach(p => {
-      const row = mk('div', 'att-row');
+      const row = mk('div', 'att-row' + (p.optional ? ' opt' : ''));
       row.appendChild(mk('span', '', fmtDayLong(p.date)));
+      if (p.optional){ row.appendChild(mk('span', 'st t-dim', p.attended ? '✓ Optional' : 'Optional')); body.appendChild(row); return; }
       row.appendChild(p.pending ? mk('span', 'st', 'Today · not yet') : p.excused ? mk('span', 'st t-yellow', 'E Excused') : p.attended ? mk('span', 'st t-green', '✓ Attended') : mk('span', 'st t-red', '✗ Missed'));
       body.appendChild(row);
     });
